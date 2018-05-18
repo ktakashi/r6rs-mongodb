@@ -41,9 +41,11 @@
 	    read-string-element
 	    read-embedded-document-element
 	    read-array-element
+	    read-binary-element
 
 	    read-cstring
-	    read-string)
+	    read-string
+	    read-binary)
     (import (rnrs)
 	    (binary bson conditions))
 
@@ -118,13 +120,18 @@
 		((vsize doc)  (read-document in)))
     (values (+ esize vsize) (list name (->vector doc)))))
 
+(define (read-binary-element in)
+  (let*-values (((esize name) (read-cstring in))
+		((vsize bin)  (read-binary in)))
+    (values (+ esize vsize) (list name bin))))
+
 (define *dispatch-table*
   `#(,read-double-element
      ,read-string-element
      ,read-embedded-document-element
      ,read-array-element
-     )
-  )
+     ,read-binary-element
+     ))
 
 (define (read-cstring in)
   (let-values (((out extract) (open-bytevector-output-port)))
@@ -141,6 +148,15 @@
     (unless (eqv? (get-u8 in) 0)
       (raise-bson-read-error 'bson-read "String must be followed by 0"))
     (values (+ size 4) (utf8->string s))))
+
+(define (read-binary in)
+  (let* ((size (read-int32 in))
+	 (subtype (get-u8 in)))
+    (when (eof-object? subtype)
+       (raise-bson-read-error 'bson-read "Unexpected EOF"))
+    ;; For now just return subtype as it is
+    ;; the spec says almost nothing, (e.g. wtf is Function?)
+    (values (+ size 5) `(binary ,subtype ,(read-n-bytevector in size)))))
 
 ;; helpers
 (define (read-int32 in)

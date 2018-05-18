@@ -33,6 +33,13 @@
 	     (read-bson read-string #vu8(#x04 #x00 #x00 #x00
 					 #x61 #x62 #x63 #x00)))
 
+(test-error "read-binary (EOF)" bson-error?
+	     (read-bson read-binary #vu8(#x04 #x00 #x00 #x00)))
+(test-values "read-binary (1)"
+	     (9 '(binary #x00 #vu8(1 2 3 4)))
+	     (read-bson read-binary #vu8(#x04 #x00 #x00 #x00
+					 #x00
+					 #x01 #x02 #x03 #x04)))
 
 (test-values "read-min-key-element (1)"
 	     (4 '(min-key "abc"))
@@ -130,6 +137,22 @@
 			     #x02 #x30 #x00 ;; "0"
 			     #x04 #x00 #x00 #x00 #x61 #x62 #x63 #x00
 			     #x00)))
+
+(test-values "read-binary-element (1)"
+	     (13 '("abc" (binary #x00 #vu8(1 2 3 4))))
+	     (read-bson read-binary-element
+			#vu8(#x61 #x62 #x63 #x00
+			     #x04 #x00 #x00 #x00
+			     #x00
+			     #x01 #x02 #x03 #x04)))
+(test-values "read-binary-element (1)"
+	     (14 '("abc" (binary #x00 #vu8(1 2 3 4))))
+	     (read-bson read-element
+			#vu8(#x05
+			     #x61 #x62 #x63 #x00
+			     #x04 #x00 #x00 #x00
+			     #x00
+			     #x01 #x02 #x03 #x04)))
 
 (test-error "read-element (EOF)" bson-error? (read-bson read-element #vu8()))
 
