@@ -38,7 +38,8 @@
 	    read-element
 	    read-cstring
 	    read-min-key
-	    read-max-key)
+	    read-max-key
+	    read-double)
     (import (rnrs)
 	    (binary bson conditions))
 
@@ -70,7 +71,7 @@
 	   (raise-bson-read-error 'bson-read "Unexpected EOF"))
 	  ((= type #xFF) (read-min-key in))
 	  ((= type #x7F) (read-max-key in))
-	  (else ((vector-ref *dispatch-table* type) in))))
+	  (else ((vector-ref *dispatch-table* (- type 1)) in))))
   (let ((type (get-u8 in)))
     (let-values (((size e) (read-by-type in type)))
       (values (+ size 1) e))))
@@ -82,6 +83,11 @@
   (let-values (((size name) (read-cstring in)))
     (values size `(max-key ,name))))
 
+(define (read-double in)
+  (let-values (((size name) (read-cstring in)))
+    (let ((d (read-f64 in)))
+      (values (+ size 8) (list name d)))))
+
 (define (read-cstring in)
   (let-values (((out extract) (open-bytevector-output-port)))
     (let loop ((count 0))
@@ -91,11 +97,17 @@
 	      ((zero? u8) (values (+ count 1) (utf8->string (extract))))
 	      (else (put-u8 out u8) (loop (+ count 1))))))))
 
-(define *dispatch-table* `#())
+(define *dispatch-table*
+  `#(,read-double
+     )
+  )
 ;; helpers
 (define (read-int32 in)
   (let ((bv (read-n-bytevector in 4)))
     (bytevector-s32-ref bv 0 (endianness little))))
+(define (read-f64 in)
+  (let ((bv (read-n-bytevector in 8)))
+    (bytevector-ieee-double-ref bv 0 (endianness little))))
 
 ;; make sure we read required length of bytes in case of socket port
 (define (read-n-bytevector in n)

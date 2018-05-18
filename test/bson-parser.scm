@@ -43,6 +43,18 @@
 	     (5 '(max-key "abc"))
 	     (read-bson read-element #vu8(#x7F #x61 #x62 #x63 #x00)))
 
+(test-values "read-double (1)"
+	     (12 '("abc" 3.14))
+	     (read-bson read-double
+			#vu8(#x61 #x62 #x63 #x00
+			     #x1f #x85 #xeb #x51 #xb8 #x1e #x9 #x40)))
+(test-values "read-double (2)"
+	     (13 '("abc" 3.14))
+	     (read-bson read-element
+			#vu8(#x01
+			     #x61 #x62 #x63 #x00
+			     #x1f #x85 #xeb #x51 #xb8 #x1e #x9 #x40)))
+
 (test-error "read-element (EOF)" bson-error? (read-bson read-element #vu8()))
 
 (test-equal "read-documet (1)" '((min-key "abc"))
