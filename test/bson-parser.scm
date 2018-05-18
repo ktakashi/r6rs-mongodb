@@ -155,10 +155,10 @@
 			     #x01 #x02 #x03 #x04)))
 
 (test-values "read-undefined-element (1)"
-	     (4 '("abc"))
+	     (4 '("abc" undefined))
 	     (read-bson read-undefined-element #vu8(#x61 #x62 #x63 #x00)))
 (test-values "read-undefined-element (2)"
-	     (5 '("abc"))
+	     (5 '("abc" undefined))
 	     (read-bson read-element #vu8(#x06 #x61 #x62 #x63 #x00)))
 
 (test-values "read-object-id-element (1)"
@@ -170,7 +170,7 @@
 			     #x85 #x9a #x71 #xdf
 			     #xd7 #x5d #xa8 #xd0)))
 
-(test-values "read-object-id-element (1)"
+(test-values "read-object-id-element (2)"
 	     (17 '("abc" (object-id #x5afec5ca #vu8(#x85 #x9a #x71)
 				    #xdfd7 #x5da8d0)))
 	     (read-bson read-element
@@ -179,6 +179,39 @@
 			     #x5a #xfe #xc5 #xca
 			     #x85 #x9a #x71 #xdf
 			     #xd7 #x5d #xa8 #xd0)))
+
+(test-values "read-boolean-element (1)"
+	     (5 '("abc" #f))
+	     (read-bson read-boolean-element #vu8(#x61 #x62 #x63 #x00 #x00)))
+(test-values "read-boolean-element (2)"
+	     (5 '("abc" #t))
+	     (read-bson read-boolean-element #vu8(#x61 #x62 #x63 #x00 #x01)))
+(test-error "read-boolean-element (3)" bson-error?
+	     (read-bson read-boolean-element #vu8(#x61 #x62 #x63 #x00 #x03)))
+(test-error "read-boolean-element (4)" bson-error?
+	     (read-bson read-boolean-element #vu8(#x61 #x62 #x63 #x00)))
+
+(test-values "read-boolean-element (5)"
+	     (6 '("abc" #t))
+	     (read-bson read-element #vu8(#x08 #x61 #x62 #x63 #x00 #x01)))
+
+(test-values "read-utc-datetime-element (1)"
+	     (12 '("abc" (utc-datetime 1)))
+	     (read-bson read-utc-datetime-element
+			#vu8(#x61 #x62 #x63 #x00
+			     #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00)))
+(test-values "read-utc-datetime-element (2)"
+	     (13 '("abc" (utc-datetime 1)))
+	     (read-bson read-element
+			#vu8(#x09 #x61 #x62 #x63 #x00
+			     #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00)))
+
+(test-values "read-null-element (1)"
+	     (4 '("abc" null))
+	     (read-bson read-null-element #vu8(#x61 #x62 #x63 #x00)))
+(test-values "read-null-element (2)"
+	     (5 '("abc" null))
+	     (read-bson read-element #vu8(#x0A #x61 #x62 #x63 #x00)))
 
 (test-error "read-element (EOF)" bson-error? (read-bson read-element #vu8()))
 

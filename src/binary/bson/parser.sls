@@ -44,6 +44,9 @@
 	    read-binary-element
 	    read-undefined-element
 	    read-object-id-element
+	    read-boolean-element
+	    read-utc-datetime-element
+	    read-null-element
 	    
 	    read-cstring
 	    read-string
@@ -129,8 +132,8 @@
 
 ; Deprecated - but need to be supported I guess
 (define (read-undefined-element in)
-  (let*-values (((size name) (read-cstring in)))
-    (values size (list name))))
+  (let-values (((size name) (read-cstring in)))
+    (values size (list name 'undefined))))
 
 (define (read-object-id-element in)
   (define (read-counter bv)
@@ -146,9 +149,27 @@
 		,(bytevector-copy-n bv 4 3) ;; machine identifier
 		,(bytevector-u16-ref bv 7 (endianness big)) ;; process id
 		,(read-counter bv)))
-  (let*-values (((size name) (read-cstring in)))
+  (let-values (((size name) (read-cstring in)))
     (let ((bv (read-n-bytevector in 12)))
       (values (+ size 12) (list name (parse-object-id bv))))))
+
+(define (read-boolean-element in)
+  (let-values (((size name) (read-cstring in)))
+    (let ((b (get-u8 in)))
+      (values (+ size 1)
+	      (list name (case b
+			   ((#x00) #f)
+			   ((#x01) #t)
+			   (else (raise-bson-read-error
+				  'bson-read "Unknown boolean value" b))))))))
+
+(define (read-utc-datetime-element in)
+  (let-values (((size name) (read-cstring in)))
+    (values (+ size 8) (list name `(utc-datetime ,(read-int64 in))))))
+
+(define (read-null-element in)
+  (let-values (((size name) (read-cstring in)))
+    (values size (list name 'null))))
 
 (define *dispatch-table*
   `#(,read-double-element
@@ -158,6 +179,9 @@
      ,read-binary-element
      ,read-undefined-element
      ,read-object-id-element
+     ,read-boolean-element
+     ,read-utc-datetime-element
+     ,read-null-element
      ))
 
 (define (read-cstring in)
@@ -192,6 +216,9 @@
 (define (read-f64 in)
   (let ((bv (read-n-bytevector in 8)))
     (bytevector-ieee-double-ref bv 0 (endianness little))))
+(define (read-int64 in)
+  (let ((bv (read-n-bytevector in 8)))
+    (bytevector-s64-ref bv 0 (endianness little))))
 
 ;; make sure we read required length of bytes in case of socket port
 (define (read-n-bytevector in n)
