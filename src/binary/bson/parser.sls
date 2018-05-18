@@ -42,7 +42,9 @@
 	    read-embedded-document-element
 	    read-array-element
 	    read-binary-element
-
+	    read-undefined-element
+	    read-object-id-element
+	    
 	    read-cstring
 	    read-string
 	    read-binary)
@@ -125,12 +127,37 @@
 		((vsize bin)  (read-binary in)))
     (values (+ esize vsize) (list name bin))))
 
+; Deprecated - but need to be supported I guess
+(define (read-undefined-element in)
+  (let*-values (((size name) (read-cstring in)))
+    (values size (list name))))
+
+(define (read-object-id-element in)
+  (define (read-counter bv)
+    (bitwise-ior (bitwise-arithmetic-shift-left (bytevector-u8-ref bv 9) 16)
+		 (bitwise-arithmetic-shift-left (bytevector-u8-ref bv 10) 8)
+		 (bytevector-u8-ref bv 11)))
+  (define (bytevector-copy-n src start count)
+    (define bv (make-bytevector count))
+    (bytevector-copy! src start bv 0 count)
+    bv)
+  (define (parse-object-id bv)
+    `(object-id ,(bytevector-u32-ref bv 0 (endianness big)) ;; Unix epoch sec
+		,(bytevector-copy-n bv 4 3) ;; machine identifier
+		,(bytevector-u16-ref bv 7 (endianness big)) ;; process id
+		,(read-counter bv)))
+  (let*-values (((size name) (read-cstring in)))
+    (let ((bv (read-n-bytevector in 12)))
+      (values (+ size 12) (list name (parse-object-id bv))))))
+
 (define *dispatch-table*
   `#(,read-double-element
      ,read-string-element
      ,read-embedded-document-element
      ,read-array-element
      ,read-binary-element
+     ,read-undefined-element
+     ,read-object-id-element
      ))
 
 (define (read-cstring in)

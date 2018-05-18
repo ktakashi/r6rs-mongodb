@@ -154,6 +154,32 @@
 			     #x00
 			     #x01 #x02 #x03 #x04)))
 
+(test-values "read-undefined-element (1)"
+	     (4 '("abc"))
+	     (read-bson read-undefined-element #vu8(#x61 #x62 #x63 #x00)))
+(test-values "read-undefined-element (2)"
+	     (5 '("abc"))
+	     (read-bson read-element #vu8(#x06 #x61 #x62 #x63 #x00)))
+
+(test-values "read-object-id-element (1)"
+	     (16 '("abc" (object-id #x5afec5ca #vu8(#x85 #x9a #x71)
+				    #xdfd7 #x5da8d0)))
+	     (read-bson read-object-id-element
+			#vu8(#x61 #x62 #x63 #x00
+			     #x5a #xfe #xc5 #xca
+			     #x85 #x9a #x71 #xdf
+			     #xd7 #x5d #xa8 #xd0)))
+
+(test-values "read-object-id-element (1)"
+	     (17 '("abc" (object-id #x5afec5ca #vu8(#x85 #x9a #x71)
+				    #xdfd7 #x5da8d0)))
+	     (read-bson read-element
+			#vu8(#x07
+			     #x61 #x62 #x63 #x00
+			     #x5a #xfe #xc5 #xca
+			     #x85 #x9a #x71 #xdf
+			     #xd7 #x5d #xa8 #xd0)))
+
 (test-error "read-element (EOF)" bson-error? (read-bson read-element #vu8()))
 
 (test-values "read-documet (1)"
