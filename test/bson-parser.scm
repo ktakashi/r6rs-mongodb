@@ -213,6 +213,157 @@
 	     (5 '("abc" null))
 	     (read-bson read-element #vu8(#x0A #x61 #x62 #x63 #x00)))
 
+(test-values "read-regex-element (1)"
+	     (9 '("abc" (regex "\\w" "i")))
+	     (read-bson read-regex-element
+			#vu8(#x61 #x62 #x63 #x00
+			     #x5C #x77 #x00 ;; \w
+			     #x69 #x00      ;; i
+			     )))
+(test-values "read-regex-element (2)"
+	     (8 '("abc" (regex "\\w" "")))
+	     (read-bson read-regex-element
+			#vu8(#x61 #x62 #x63 #x00
+			     #x5C #x77 #x00 ;; \w
+			     #x00      ;; ""
+			     )))
+(test-values "read-regex-element (3)"
+	     (10 '("abc" (regex "\\w" "il")))
+	     (read-bson read-regex-element
+			#vu8(#x61 #x62 #x63 #x00
+			     #x5C #x77 #x00 ;; \w
+			     #x69 #x6C #x00 ;; il
+			     )))
+(test-error "read-regex-element (4)" bson-error?
+	     (read-bson read-regex-element
+			#vu8(#x61 #x62 #x63 #x00
+			     #x5C #x77 #x00 ;; \w
+			     #x71 #x00      ;; q
+			     )))
+(test-error "read-regex-element (5)" bson-error?
+	     (read-bson read-regex-element
+			#vu8(#x61 #x62 #x63 #x00
+			     #x5C #x77 #x00 ;; \w
+			     #x6c #x71 #x00 ;; li
+			     )))
+
+(test-values "read-regex-element (6)"
+	     (11 '("abc" (regex "\\w" "il")))
+	     (read-bson read-element
+			#vu8(#x0B
+			     #x61 #x62 #x63 #x00
+			     #x5C #x77 #x00 ;; \w
+			     #x69 #x6C #x00 ;; il
+			     )))
+
+(test-values "read-db-pointer-element (1)"
+	     (22 '("abc" (db-pointer "p" #vu8(1 2 3 4 5 6 7 8 9 10 11 12))))
+	     (read-bson read-db-pointer-element
+			#vu8(#x61 #x62 #x63 #x00
+			     #x02 #x00 #x00 #x00 #x70 #x00 ;; p
+			     1 2 3 4 5 6 7 8 9 10 11 12)))
+
+(test-values "read-db-pointer-element (2)"
+	     (23 '("abc" (db-pointer "p" #vu8(1 2 3 4 5 6 7 8 9 10 11 12))))
+	     (read-bson read-element
+			#vu8(#x0C
+			     #x61 #x62 #x63 #x00
+			     #x02 #x00 #x00 #x00 #x70 #x00 ;; p
+			     1 2 3 4 5 6 7 8 9 10 11 12)))
+
+(test-values "read-javascript-element (1)"
+	     (18 '("abc" (javascript "var n = 1")))
+	     (read-bson read-javascript-element
+			#vu8(#x61 #x62 #x63 #x00
+			     #x0A #x00 #x00 #x00 
+			     #x76 #x61 #x72 #x20 #x6e #x20 #x3d #x20 #x31
+			     #x00 
+			     )))
+(test-values "read-javascript-element (2)"
+	     (19 '("abc" (javascript "var n = 1")))
+	     (read-bson read-element
+			#vu8(#x0D
+			     #x61 #x62 #x63 #x00
+			     #x0A #x00 #x00 #x00 
+			     #x76 #x61 #x72 #x20 #x6e #x20 #x3d #x20 #x31
+			     #x00 
+			     )))
+
+(test-values "read-symbol-element (1)"
+	     (12 '("abc" abc))
+	     (read-bson read-symbol-element
+			#vu8(#x61 #x62 #x63 #x00
+			     #x04 #x00 #x00 #x00
+			     #x61 #x62 #x63 #x00)))
+(test-values "read-symbol-element (2)"
+	     (13 '("abc" abc))
+	     (read-bson read-element
+			#vu8(#x0E
+			     #x61 #x62 #x63 #x00
+			     #x04 #x00 #x00 #x00
+			     #x61 #x62 #x63 #x00)))
+
+(test-values "read-javascript/scope-element (1)"
+	     (31 '("abc" (javascript/scope "n += 1" (("n" 3.14)))))
+	     (read-bson read-javascript/scope-element
+			#vu8(#x61 #x62 #x63 #x00
+			     #x07 #x00 #x00 #x00
+			     #x6e #x20 #x2b #x3d #x20 #x31
+			     #x00
+			     #x10 #x00 #x00 #x00
+			     #x01 #x6E #x00 ;; n
+			     #x1f #x85 #xeb #x51 #xb8 #x1e #x09 #x40 ;; 3.14
+			     #x00
+			     )))
+(test-values "read-javascript/scope-element (1)"
+	     (32 '("abc" (javascript/scope "n += 1" (("n" 3.14)))))
+	     (read-bson read-element
+			#vu8(#x0F
+			     #x61 #x62 #x63 #x00
+			     #x07 #x00 #x00 #x00
+			     #x6e #x20 #x2b #x3d #x20 #x31
+			     #x00
+			     #x10 #x00 #x00 #x00
+			     #x01 #x6E #x00 ;; n
+			     #x1f #x85 #xeb #x51 #xb8 #x1e #x09 #x40 ;; 3.14
+			     #x00
+			     )))
+
+(test-values "read-int32-element (1)"
+	     (8 '("abc" (int32 1)))
+	     (read-bson read-int32-element
+			#vu8(#x61 #x62 #x63 #x00 #x01 #x00 #x00 #x00)))
+(test-values "read-int32-element (2)"
+	     (9 '("abc" (int32 1)))
+	     (read-bson read-element
+			#vu8(#x10 #x61 #x62 #x63 #x00 #x01 #x00 #x00 #x00)))
+
+(test-values "read-uint64-element (1)"
+	     (12 '("abc" (uint64 1)))
+	     (read-bson read-uint64-element
+			#vu8(#x61 #x62 #x63 #x00
+			     #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00)))
+(test-values "read-uint64-element (2)"
+	     (13 '("abc" (uint64 1)))
+	     (read-bson read-element
+			#vu8(#x11
+			     #x61 #x62 #x63 #x00
+			     #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00)))
+
+(test-values "read-int64-element (1)"
+	     (12 '("abc" (int64 1)))
+	     (read-bson read-int64-element
+			#vu8(#x61 #x62 #x63 #x00
+			     #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00)))
+(test-values "read-int64-element (2)"
+	     (13 '("abc" (int64 1)))
+	     (read-bson read-element
+			#vu8(#x12
+			     #x61 #x62 #x63 #x00
+			     #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00)))
+
+;; decimal128 is not supported (hopefully yet). so no test
+
 (test-error "read-element (EOF)" bson-error? (read-bson read-element #vu8()))
 
 (test-values "read-documet (1)"
