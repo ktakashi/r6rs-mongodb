@@ -36,10 +36,13 @@
     (export read-document
 	    read-e-list
 	    read-element
+	    read-min-key-element
+	    read-max-key-element
+	    read-double-element
+	    read-string-element
+
 	    read-cstring
-	    read-min-key
-	    read-max-key
-	    read-double)
+	    read-string)
     (import (rnrs)
 	    (binary bson conditions))
 
@@ -69,24 +72,35 @@
   (define (read-by-type in type)
     (cond ((eof-object? type)
 	   (raise-bson-read-error 'bson-read "Unexpected EOF"))
-	  ((= type #xFF) (read-min-key in))
-	  ((= type #x7F) (read-max-key in))
+	  ((= type #xFF) (read-min-key-element in))
+	  ((= type #x7F) (read-max-key-element in))
 	  (else ((vector-ref *dispatch-table* (- type 1)) in))))
   (let ((type (get-u8 in)))
     (let-values (((size e) (read-by-type in type)))
       (values (+ size 1) e))))
 
-(define (read-min-key in)
+(define (read-min-key-element in)
   (let-values (((size name) (read-cstring in)))
     (values size `(min-key ,name))))
-(define (read-max-key in)
+(define (read-max-key-element in)
   (let-values (((size name) (read-cstring in)))
     (values size `(max-key ,name))))
 
-(define (read-double in)
+(define (read-double-element in)
   (let-values (((size name) (read-cstring in)))
     (let ((d (read-f64 in)))
       (values (+ size 8) (list name d)))))
+
+(define (read-string-element in)
+  (let*-values (((esize name) (read-cstring in))
+		((vsize str)   (read-string in)))
+    (values (+ esize vsize) (list name str))))
+
+(define *dispatch-table*
+  `#(,read-double-element
+     ,read-string-element
+     )
+  )
 
 (define (read-cstring in)
   (let-values (((out extract) (open-bytevector-output-port)))
@@ -97,10 +111,13 @@
 	      ((zero? u8) (values (+ count 1) (utf8->string (extract))))
 	      (else (put-u8 out u8) (loop (+ count 1))))))))
 
-(define *dispatch-table*
-  `#(,read-double
-     )
-  )
+(define (read-string in)
+  (let* ((size (read-int32 in))
+	 (s    (read-n-bytevector in (- size 1))))
+    (unless (eqv? (get-u8 in) 0)
+      (raise-bson-read-error 'bson-read "String must be followed by 0"))
+    (values (+ size 4) (utf8->string s))))
+
 ;; helpers
 (define (read-int32 in)
   (let ((bv (read-n-bytevector in 4)))

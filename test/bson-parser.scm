@@ -28,32 +28,49 @@
 (test-values "read-cstring (1)"
 	     (4 "abc")
 	     (read-bson read-cstring #vu8(#x61 #x62 #x63 #x00)))
+(test-values "read-string (1)"
+	     (8 "abc")
+	     (read-bson read-string #vu8(#x04 #x00 #x00 #x00
+					 #x61 #x62 #x63 #x00)))
 
-(test-values "read-min-key (1)"
+
+(test-values "read-min-key-element (1)"
 	     (4 '(min-key "abc"))
-	     (read-bson read-min-key #vu8(#x61 #x62 #x63 #x00)))
-(test-values "read-min-key (2)"
+	     (read-bson read-min-key-element #vu8(#x61 #x62 #x63 #x00)))
+(test-values "read-min-key-element (2)"
 	     (5 '(min-key "abc"))
 	     (read-bson read-element #vu8(#xFF #x61 #x62 #x63 #x00)))
 
-(test-values "read-max-key (1)"
+(test-values "read-max-key-element (1)"
 	     (4 '(max-key "abc"))
-	     (read-bson read-max-key #vu8(#x61 #x62 #x63 #x00)))
-(test-values "read-max-key (2)"
+	     (read-bson read-max-key-element #vu8(#x61 #x62 #x63 #x00)))
+(test-values "read-max-key-element (2)"
 	     (5 '(max-key "abc"))
 	     (read-bson read-element #vu8(#x7F #x61 #x62 #x63 #x00)))
 
-(test-values "read-double (1)"
+(test-values "read-double-element (1)"
 	     (12 '("abc" 3.14))
-	     (read-bson read-double
+	     (read-bson read-double-element
 			#vu8(#x61 #x62 #x63 #x00
 			     #x1f #x85 #xeb #x51 #xb8 #x1e #x9 #x40)))
-(test-values "read-double (2)"
+(test-values "read-double-element (2)"
 	     (13 '("abc" 3.14))
 	     (read-bson read-element
 			#vu8(#x01
 			     #x61 #x62 #x63 #x00
 			     #x1f #x85 #xeb #x51 #xb8 #x1e #x9 #x40)))
+
+(test-values "read-string-element (1)"
+	     (12 '("abc" "abc"))
+	     (read-bson read-string-element
+			#vu8(#x61 #x62 #x63 #x00
+			     #x04 #x00 #x00 #x00 #x61 #x62 #x63 #x00)))
+(test-values "read-string-element (2)"
+	     (13 '("abc" "abc"))
+	     (read-bson read-element
+			#vu8(#x02
+			     #x61 #x62 #x63 #x00
+			     #x04 #x00 #x00 #x00 #x61 #x62 #x63 #x00)))
 
 (test-error "read-element (EOF)" bson-error? (read-bson read-element #vu8()))
 
