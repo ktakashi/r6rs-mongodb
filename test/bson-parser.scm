@@ -52,13 +52,13 @@
 	     (12 '("abc" 3.14))
 	     (read-bson read-double-element
 			#vu8(#x61 #x62 #x63 #x00
-			     #x1f #x85 #xeb #x51 #xb8 #x1e #x9 #x40)))
+			     #x1f #x85 #xeb #x51 #xb8 #x1e #x09 #x40)))
 (test-values "read-double-element (2)"
 	     (13 '("abc" 3.14))
 	     (read-bson read-element
 			#vu8(#x01
 			     #x61 #x62 #x63 #x00
-			     #x1f #x85 #xeb #x51 #xb8 #x1e #x9 #x40)))
+			     #x1f #x85 #xeb #x51 #xb8 #x1e #x09 #x40)))
 
 (test-values "read-string-element (1)"
 	     (12 '("abc" "abc"))
@@ -72,17 +72,79 @@
 			     #x61 #x62 #x63 #x00
 			     #x04 #x00 #x00 #x00 #x61 #x62 #x63 #x00)))
 
+(test-values "read-embedded-document-element (1)"
+	     (19 '("abc" ((min-key "abc") (max-key "abc"))))
+	     (read-bson read-embedded-document-element
+			#vu8(#x61 #x62 #x63 #x00
+			     #x0F #x00 #x00 #x00
+			     #xFF #x61 #x62 #x63 #x00
+			     #x7F #x61 #x62 #x63 #x00 #x00)))
+(test-values "read-embedded-document-element (1)"
+	     (20 '("abc" ((min-key "abc") (max-key "abc"))))
+	     (read-bson read-element
+			#vu8(#x03
+			     #x61 #x62 #x63 #x00
+			     #x0F #x00 #x00 #x00
+			     #xFF #x61 #x62 #x63 #x00
+			     #x7F #x61 #x62 #x63 #x00 #x00)))
+
+(test-values "read-array-element (1)"
+	     (31 '("abc" #(3.14 "abc")))
+	     (read-bson read-array-element
+			#vu8(#x61 #x62 #x63 #x00
+			     #x1B #x00 #x00 #x00
+			     #x01 #x30 #x00 ;; "0"
+			     #x1f #x85 #xeb #x51 #xb8 #x1e #x09 #x40
+			     #x02 #x31 #x00 ;; "1"
+			     #x04 #x00 #x00 #x00 #x61 #x62 #x63 #x00
+			     #x00)))
+(test-values "read-array-element (2)"
+	     (32 '("abc" #(3.14 "abc")))
+	     (read-bson read-element
+			#vu8(#x04
+			     #x61 #x62 #x63 #x00
+			     #x1B #x00 #x00 #x00
+			     #x01 #x30 #x00 ;; "0"
+			     #x1f #x85 #xeb #x51 #xb8 #x1e #x09 #x40
+			     #x02 #x31 #x00 ;; "1"
+			     #x04 #x00 #x00 #x00 #x61 #x62 #x63 #x00
+			     #x00)))
+;; not sure if this is an error though...
+(test-error "read-array-element (3)" bson-error?
+	     (read-bson read-element
+			#vu8(#x04
+			     #x61 #x62 #x63 #x00
+			     #x1B #x00 #x00 #x00
+			     #x01 #x30 #x00 ;; "0"
+			     #x1f #x85 #xeb #x51 #xb8 #x1e #x09 #x40
+			     #x02 #x32 #x00 ;; "2"
+			     #x04 #x00 #x00 #x00 #x61 #x62 #x63 #x00
+			     #x00)))
+(test-error "read-array-element (4)" bson-error?
+	     (read-bson read-element
+			#vu8(#x04
+			     #x61 #x62 #x63 #x00
+			     #x1B #x00 #x00 #x00
+			     #x01 #x31 #x00 ;; "1"
+			     #x1f #x85 #xeb #x51 #xb8 #x1e #x09 #x40
+			     #x02 #x30 #x00 ;; "0"
+			     #x04 #x00 #x00 #x00 #x61 #x62 #x63 #x00
+			     #x00)))
+
 (test-error "read-element (EOF)" bson-error? (read-bson read-element #vu8()))
 
-(test-equal "read-documet (1)" '((min-key "abc"))
-	    (read-bson read-document #vu8(#x0A #x00 #x00 #x00
-					  #xFF #x61 #x62 #x63 #x00 #x00)))
+(test-values "read-documet (1)"
+	     (#x0A '((min-key "abc")))
+	     (read-bson read-document #vu8(#x0A #x00 #x00 #x00
+					   #xFF #x61 #x62 #x63 #x00 #x00)))
 
-(test-equal "read-documet (2)" '((max-key "abc"))
+(test-values "read-documet (2)"
+	    (#x0A '((max-key "abc")))
 	    (read-bson read-document #vu8(#x0A #x00 #x00 #x00
 					  #x7F #x61 #x62 #x63 #x00 #x00)))
 
-(test-equal "read-documet (3)" '((min-key "abc") (max-key "abc"))
+(test-values "read-documet (3)"
+	    (#x0F '((min-key "abc") (max-key "abc")))
 	    (read-bson read-document #vu8(#x0F #x00 #x00 #x00
 					  #xFF #x61 #x62 #x63 #x00
 					  #x7F #x61 #x62 #x63 #x00 #x00)))

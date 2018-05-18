@@ -34,12 +34,13 @@
 #!r6rs
 (library (binary bson parser)
     (export read-document
-	    read-e-list
 	    read-element
 	    read-min-key-element
 	    read-max-key-element
 	    read-double-element
 	    read-string-element
+	    read-embedded-document-element
+	    read-array-element
 
 	    read-cstring
 	    read-string)
@@ -59,8 +60,9 @@
 	 (r (read-e-list in (- document-size 5))))
     (unless (eqv? (get-u8 in) 0)
       (raise-bson-read-error 'bson-read "BSON document must end with 0"))
-    r))
+    (values document-size r)))
 
+;; it's sort of helper so not exported
 (define (read-e-list in size)
   (let loop ((r '()) (read 0))
     (if (= read size)
@@ -93,12 +95,34 @@
 
 (define (read-string-element in)
   (let*-values (((esize name) (read-cstring in))
-		((vsize str)   (read-string in)))
+		((vsize str)  (read-string in)))
     (values (+ esize vsize) (list name str))))
+
+(define (read-embedded-document-element in)
+  (let*-values (((esize name) (read-cstring in))
+		((vsize doc)  (read-document in)))
+    (values (+ esize vsize) (list name doc))))
+
+(define (read-array-element in)
+  (define (->vector doc)
+    (let loop ((arr doc) (r '()) (current 0))
+      (cond ((null? arr) (list->vector (reverse r)))
+	    ((eqv? current (string->number (caar arr)))
+	     (loop (cdr arr) (cons (cadar arr) r) (+ current 1)))
+	    (else
+	     (raise-bson-read-error
+	      'bson-read
+	      "Array must contain numeric key of ascending order"
+	      doc)))))
+  (let*-values (((esize name) (read-cstring in))
+		((vsize doc)  (read-document in)))
+    (values (+ esize vsize) (list name (->vector doc)))))
 
 (define *dispatch-table*
   `#(,read-double-element
      ,read-string-element
+     ,read-embedded-document-element
+     ,read-array-element
      )
   )
 
