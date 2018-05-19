@@ -1,6 +1,6 @@
 ;;; -*- mode:scheme; coding:utf-8; -*-
 ;;;
-;;; binary/bson/parser.sls - BSON parser
+;;; mongodb/bson/parser.sls - BSON parser
 ;;;
 ;;;   Copyright (c) 2018  Takashi Kato  <ktakashi@ymail.com>
 ;;;
@@ -32,7 +32,7 @@
 ;; reference
 ;;  - http://bsonspec.org/spec.html
 #!r6rs
-(library (binary bson parser)
+(library (mongodb bson parser)
     (export read-document
 	    read-element
 	    read-min-key-element
@@ -61,7 +61,7 @@
 	    read-string
 	    read-binary)
     (import (rnrs)
-	    (binary bson conditions))
+	    (mongodb bson conditions))
 
 ;;; BSON format in S-expr
 ;;; document ::= e-list

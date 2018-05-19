@@ -1,7 +1,7 @@
 #!r6rs
 (import (rnrs)
-	(binary bson parser)
-	(binary bson conditions)
+	(mongodb bson parser)
+	(mongodb bson conditions)
 	(srfi :64))
 
 (test-begin "BSON parser")

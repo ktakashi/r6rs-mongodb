@@ -1,6 +1,6 @@
 ;;; -*- mode:scheme; coding:utf-8; -*-
 ;;;
-;;; binary/bson/conditions.sls - BSON conditions
+;;; mongodb/bson.sls - BSON
 ;;;  
 ;;;   Copyright (c) 2018  Takashi Kato  <ktakashi@ymail.com>
 ;;;   
@@ -28,11 +28,32 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
 
-#!r6rs
-(library (binary bson conditions)
-    (export make-bson-error bson-error?)
-    (import (rnrs))
+;; user level library
 
-(define-condition-type &bson-error &error
-  make-bson-error bson-error?)
+#!r6rs
+(library (mongodb bson)
+    (export bson-write
+	    bson-read
+	    bson-error?)
+    (import (rnrs)
+	    (mongodb bson parser)
+	    (mongodb bson conditions))
+
+;;; API
+(define bson-write
+  (case-lambda
+   ((bson) (bson-write bson (current-output-port)))
+   ((bson out) 
+    (unless (binary-output-port? in)
+      (assertion-violation 'bson-write "Binary output port required" out))
+    (error 'bson-write "not yet"))))
+
+;;; API
+(define bson-read
+  (case-lambda
+   (() (bson-read (current-input-port)))
+   ((in)
+    (unless (binary-input-port? in)
+      (assertion-violation 'bson-read "Binary input port required" in))
+    (read-document in))))
 )
