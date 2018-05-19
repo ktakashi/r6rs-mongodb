@@ -61,6 +61,7 @@
 	    read-string
 	    read-binary)
     (import (rnrs)
+	    (mongodb util bytevectors)
 	    (mongodb bson conditions))
 
 ;;; BSON format in S-expr
@@ -145,22 +146,9 @@
     (values size (list name 'undefined))))
 
 (define (read-object-id-element in)
-  (define (read-counter bv)
-    (bitwise-ior (bitwise-arithmetic-shift-left (bytevector-u8-ref bv 9) 16)
-		 (bitwise-arithmetic-shift-left (bytevector-u8-ref bv 10) 8)
-		 (bytevector-u8-ref bv 11)))
-  (define (bytevector-copy-n src start count)
-    (define bv (make-bytevector count))
-    (bytevector-copy! src start bv 0 count)
-    bv)
-  (define (parse-object-id bv)
-    `(object-id ,(bytevector-u32-ref bv 0 (endianness big)) ;; Unix epoch sec
-		,(bytevector-copy-n bv 4 3) ;; machine identifier
-		,(bytevector-u16-ref bv 7 (endianness big)) ;; process id
-		,(read-counter bv)))
   (let-values (((size name) (read-cstring in)))
     (let ((bv (read-n-bytevector in 12)))
-      (values (+ size 12) (list name (parse-object-id bv))))))
+      (values (+ size 12) `(,name (object-id ,(bytevector->hex-string bv)))))))
 
 (define (read-boolean-element in)
   (let-values (((size name) (read-cstring in)))

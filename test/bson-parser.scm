@@ -162,8 +162,7 @@
 	     (read-bson read-element #vu8(#x06 #x61 #x62 #x63 #x00)))
 
 (test-values "read-object-id-element (1)"
-	     (16 '("abc" (object-id #x5afec5ca #vu8(#x85 #x9a #x71)
-				    #xdfd7 #x5da8d0)))
+	     (16 '("abc" (object-id "5afec5ca859a71dfd75da8d0")))
 	     (read-bson read-object-id-element
 			#vu8(#x61 #x62 #x63 #x00
 			     #x5a #xfe #xc5 #xca
@@ -171,8 +170,7 @@
 			     #xd7 #x5d #xa8 #xd0)))
 
 (test-values "read-object-id-element (2)"
-	     (17 '("abc" (object-id #x5afec5ca #vu8(#x85 #x9a #x71)
-				    #xdfd7 #x5da8d0)))
+	     (17 '("abc" (object-id "5afec5ca859a71dfd75da8d0")))
 	     (read-bson read-element
 			#vu8(#x07
 			     #x61 #x62 #x63 #x00
