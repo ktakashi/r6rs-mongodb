@@ -32,8 +32,12 @@
 (library (mongodb bson writer)
     (export write-document
 	    write-element
-
-	    write-cstring)
+	    write-min-key-element
+	    write-max-key-element
+	    write-double-element
+	    
+	    write-cstring
+	    write-double)
     (import (rnrs)
 	    (mongodb bson conditions))
 
@@ -46,18 +50,34 @@
       (put-bytevector out bv))))
 
 (define (write-element out element)
-  (define (write-by-type out value)
-    (cond ((find (lambda (writer) ((car writer) value)) *writers*) =>
-	   (lambda (writer) ((cdr writer) out value)))
-	  (else (raise-bson-write-error 'bson-write "Unknown value" value))))
+  (define (write-by-type out element)
+    (cond ((find (lambda (writer) ((car writer) (cadr element))) *writers*) =>
+	   (lambda (writer) ((cdr writer) out element)))
+	  (else (raise-bson-write-error 'bson-write "Unknown element" element))))
   (unless (and (pair? element)
 	       (string? (car element)) (not (null? (cdr element))))
     (raise-bson-write-error 'bson-write "Invalid element" element))
-  (write-cstring out (car element))
-  (write-by-type out (cadr element)))
+  (write-by-type out element))
 
+(define (write-min-key-element out element)
+  (put-u8 out #xFF)
+  (write-cstring out (car element)))
+(define (write-max-key-element out element)
+  (put-u8 out #x7F)
+  (write-cstring out (car element)))
+
+(define (write-double-element out element)
+  (put-u8 out #x01)
+  (write-cstring out (car element))
+  (write-double out (cadr element)))
+
+(define (type-of? name) (lambda (v) (and (pair? v) (eq? name (car v)))))
+(define (symbol-of? name) (lambda (v) (eq? name v)))
 (define *writers*
-  `(
+  `((,(symbol-of? 'min-key) ,write-min-key-element)
+    (,(symbol-of? 'max-key) ,write-max-key-element)
+    ;; other numbers are typed.
+    ,number? ,write-double-element
     ))
 
 (define (write-cstring out cstring)
@@ -67,6 +87,12 @@
       (when (zero? (bytevector-u8-ref bv i))
 	(raise-bson-write-error 'bson-write
 				"cstring mustn't contain 0" cstring)))))
+
+(define (write-double out double)
+  ;; FIXME a bit inefficient
+  (let ((bv (make-bytevector 8)))
+    (bytevector-ieee-double-set! bv 0 double (endianness little))
+    (put-bytevector out bv)))
 
 (define (raise-bson-write-error who msg . irr)
   (raise (condition

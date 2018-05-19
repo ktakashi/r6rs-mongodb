@@ -42,17 +42,17 @@
 					 #x01 #x02 #x03 #x04)))
 
 (test-values "read-min-key-element (1)"
-	     (4 '(min-key "abc"))
+	     (4 '("abc" min-key))
 	     (read-bson read-min-key-element #vu8(#x61 #x62 #x63 #x00)))
 (test-values "read-min-key-element (2)"
-	     (5 '(min-key "abc"))
+	     (5 '("abc" min-key))
 	     (read-bson read-element #vu8(#xFF #x61 #x62 #x63 #x00)))
 
 (test-values "read-max-key-element (1)"
-	     (4 '(max-key "abc"))
+	     (4 '("abc" max-key))
 	     (read-bson read-max-key-element #vu8(#x61 #x62 #x63 #x00)))
 (test-values "read-max-key-element (2)"
-	     (5 '(max-key "abc"))
+	     (5 '("abc" max-key))
 	     (read-bson read-element #vu8(#x7F #x61 #x62 #x63 #x00)))
 
 (test-values "read-double-element (1)"
@@ -80,14 +80,14 @@
 			     #x04 #x00 #x00 #x00 #x61 #x62 #x63 #x00)))
 
 (test-values "read-embedded-document-element (1)"
-	     (19 '("abc" ((min-key "abc") (max-key "abc"))))
+	     (19 '("abc" (("abc" min-key) ("abc" max-key))))
 	     (read-bson read-embedded-document-element
 			#vu8(#x61 #x62 #x63 #x00
 			     #x0F #x00 #x00 #x00
 			     #xFF #x61 #x62 #x63 #x00
 			     #x7F #x61 #x62 #x63 #x00 #x00)))
 (test-values "read-embedded-document-element (1)"
-	     (20 '("abc" ((min-key "abc") (max-key "abc"))))
+	     (20 '("abc" (("abc" min-key) ("abc" max-key))))
 	     (read-bson read-element
 			#vu8(#x03
 			     #x61 #x62 #x63 #x00
@@ -365,17 +365,17 @@
 (test-error "read-element (EOF)" bson-error? (read-bson read-element #vu8()))
 
 (test-values "read-documet (1)"
-	     (#x0A '((min-key "abc")))
+	     (#x0A '(("abc" min-key)))
 	     (read-bson read-document #vu8(#x0A #x00 #x00 #x00
 					   #xFF #x61 #x62 #x63 #x00 #x00)))
 
 (test-values "read-documet (2)"
-	    (#x0A '((max-key "abc")))
+	    (#x0A '(("abc" max-key)))
 	    (read-bson read-document #vu8(#x0A #x00 #x00 #x00
 					  #x7F #x61 #x62 #x63 #x00 #x00)))
 
 (test-values "read-documet (3)"
-	    (#x0F '((min-key "abc") (max-key "abc")))
+	    (#x0F '(("abc" min-key) ("abc" max-key)))
 	    (read-bson read-document #vu8(#x0F #x00 #x00 #x00
 					  #xFF #x61 #x62 #x63 #x00
 					  #x7F #x61 #x62 #x63 #x00 #x00)))

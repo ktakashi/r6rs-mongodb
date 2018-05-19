@@ -98,10 +98,10 @@
 
 (define (read-min-key-element in)
   (let-values (((size name) (read-cstring in)))
-    (values size `(min-key ,name))))
+    (values size `(,name min-key))))
 (define (read-max-key-element in)
   (let-values (((size name) (read-cstring in)))
-    (values size `(max-key ,name))))
+    (values size `(,name max-key))))
 
 (define (read-double-element in)
   (let-values (((size name) (read-cstring in)))
