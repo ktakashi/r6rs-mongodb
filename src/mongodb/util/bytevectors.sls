@@ -28,6 +28,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
+#!r6rs
 (library (mongodb util bytevectors)
     (export bytevector->hex-string)
     (import (rnrs)

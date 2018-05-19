@@ -37,16 +37,19 @@
 	    bson-error?)
     (import (rnrs)
 	    (mongodb bson parser)
+	    (mongodb bson writer)
 	    (mongodb bson conditions))
 
 ;;; API
 (define bson-write
   (case-lambda
    ((bson) (bson-write bson (current-output-port)))
-   ((bson out) 
+   ((bson out)
+    (unless (pair? bson)
+      (assertion-violation 'bson-write "BSON document must a list" out))
     (unless (binary-output-port? in)
       (assertion-violation 'bson-write "Binary output port required" out))
-    (error 'bson-write "not yet"))))
+    (write-document out bson))))
 
 ;;; API
 (define bson-read
@@ -55,5 +58,6 @@
    ((in)
     (unless (binary-input-port? in)
       (assertion-violation 'bson-read "Binary input port required" in))
-    (read-document in))))
+    (let-values (((size bson) (read-document in)))
+      bson))))
 )

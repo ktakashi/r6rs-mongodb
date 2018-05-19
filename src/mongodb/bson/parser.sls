@@ -73,19 +73,17 @@
 ;;;            | (e-name)
 ;;;            ... so on
 (define (read-document in)
+  (define (read-e-list in size)
+    (let loop ((r '()) (read 0))
+      (if (= read size)
+	  (reverse r)
+	  (let-values (((size element) (read-element in)))
+	    (loop (cons element r) (+ read size))))))
   (let* ((document-size (read-int32 in))
 	 (r (read-e-list in (- document-size 5))))
     (unless (eqv? (get-u8 in) 0)
       (raise-bson-read-error 'bson-read "BSON document must end with 0"))
     (values document-size r)))
-
-;; it's sort of helper so not exported
-(define (read-e-list in size)
-  (let loop ((r '()) (read 0))
-    (if (= read size)
-	(reverse r)
-	(let-values (((size element) (read-element in)))
-	  (loop (cons element r) (+ read size))))))
 
 (define (read-element in)
   (define (read-by-type in type)
