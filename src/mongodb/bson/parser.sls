@@ -222,13 +222,13 @@
 
 (define (read-int32-element in)
   (let-values (((esize name)   (read-cstring in)))
-    (values (+ esize 4) (list name `(int32 ,(read-int32 in))))))
+    (values (+ esize 4) (list name `(s32 ,(read-int32 in))))))
 (define (read-uint64-element in)
   (let-values (((esize name)   (read-cstring in)))
-    (values (+ esize 8) (list name `(uint64 ,(read-uint64 in))))))
+    (values (+ esize 8) (list name `(u64 ,(read-uint64 in))))))
 (define (read-int64-element in)
   (let-values (((esize name)   (read-cstring in)))
-    (values (+ esize 8) (list name `(int64 ,(read-int64 in))))))
+    (values (+ esize 8) (list name `(s64 ,(read-int64 in))))))
 (define (read-decimal128-element in)
   (raise-bson-read-error 'bson-read "Decimal 128 is not supported"))
 

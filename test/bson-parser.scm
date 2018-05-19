@@ -330,33 +330,33 @@
 			     )))
 
 (test-values "read-int32-element (1)"
-	     (8 '("abc" (int32 1)))
+	     (8 '("abc" (s32 1)))
 	     (read-bson read-int32-element
 			#vu8(#x61 #x62 #x63 #x00 #x01 #x00 #x00 #x00)))
 (test-values "read-int32-element (2)"
-	     (9 '("abc" (int32 1)))
+	     (9 '("abc" (s32 1)))
 	     (read-bson read-element
 			#vu8(#x10 #x61 #x62 #x63 #x00 #x01 #x00 #x00 #x00)))
 
 (test-values "read-uint64-element (1)"
-	     (12 '("abc" (uint64 1)))
+	     (12 '("abc" (u64 1)))
 	     (read-bson read-uint64-element
 			#vu8(#x61 #x62 #x63 #x00
 			     #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00)))
 (test-values "read-uint64-element (2)"
-	     (13 '("abc" (uint64 1)))
+	     (13 '("abc" (u64 1)))
 	     (read-bson read-element
 			#vu8(#x11
 			     #x61 #x62 #x63 #x00
 			     #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00)))
 
 (test-values "read-int64-element (1)"
-	     (12 '("abc" (int64 1)))
+	     (12 '("abc" (s64 1)))
 	     (read-bson read-int64-element
 			#vu8(#x61 #x62 #x63 #x00
 			     #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00)))
 (test-values "read-int64-element (2)"
-	     (13 '("abc" (int64 1)))
+	     (13 '("abc" (s64 1)))
 	     (read-bson read-element
 			#vu8(#x12
 			     #x61 #x62 #x63 #x00
