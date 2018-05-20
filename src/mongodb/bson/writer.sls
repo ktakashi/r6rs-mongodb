@@ -38,13 +38,18 @@
 	    write-string-element
 	    write-embedded-document-element
 	    write-array-element
+	    write-binary-element
+	    write-undefined-element
+	    write-object-id-element
+	    write-boolean-element
 	    
 	    write-cstring
 	    write-string
 	    write-int32
 	    write-double)
     (import (rnrs)
-	    (mongodb bson conditions))
+	    (mongodb bson conditions)
+	    (mongodb util bytevectors))
 
 (define (write-document out document)
   (let-values (((bout extract) (open-bytevector-output-port)))
@@ -100,6 +105,29 @@
   (write-cstring out (car element))
   (write-document out (->document (cadr element))))
 
+(define (write-binary-element out element)
+  (put-u8 out #x05)
+  (write-cstring out (car element))
+  (let* ((value (cadr element))
+	 (subtype (cadr value))
+	 (bin (caddr value)))
+    (write-int32 out (bytevector-length bin))
+    (put-u8 out subtype)
+    (put-bytevector out bin)))
+
+(define (write-undefined-element out element)
+  (put-u8 out #x06)
+  (write-cstring out (car element)))
+(define (write-object-id-element out element)
+  (put-u8 out #x07)
+  (write-cstring out (car element))
+  (let ((value (cadr element)))
+    (put-bytevector out (hex-string->bytevector (cadr value)))))
+(define (write-boolean-element out element)
+  (put-u8 out #x08)
+  (write-cstring out (car element))
+  (put-u8 out (if (cadr element) #x01 #x00)))
+
 (define (type-of? name) (lambda (v) (and (pair? v) (eq? name (car v)))))
 (define (symbol-of? name) (lambda (v) (eq? name v)))
 (define (document? v) (and (pair? v) (pair? (car v))))
@@ -111,6 +139,10 @@
     (,string? ,write-string-element)
     (,document? ,write-embedded-document-element)
     (,vector? ,write-array-element)
+    (,(type-of? 'binary) ,write-binary-element)
+    (,(symbol-of? 'undefined) ,write-undefined-element)
+    (,(type-of? 'object-id) ,write-object-id-element)
+    (,boolean? ,write-boolean-element)
     ))
 
 (define (write-cstring out cstring)

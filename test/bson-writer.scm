@@ -87,4 +87,53 @@
 		 #x00)
 	    write-element '("abc" #(3.14 "abc")))
 
+(test-write "write-binary-element (1)"
+	    #vu8(#x05
+		 #x61 #x62 #x63 #x00
+		 #x04 #x00 #x00 #x00
+		 #x00
+		 #x01 #x02 #x03 #x04)
+	    write-binary-element '("abc" (binary #x00 #vu8(1 2 3 4))))
+(test-write "write-binary-element (2)"
+	    #vu8(#x05
+		 #x61 #x62 #x63 #x00
+		 #x04 #x00 #x00 #x00
+		 #x00
+		 #x01 #x02 #x03 #x04)
+	    write-element '("abc" (binary #x00 #vu8(1 2 3 4))))
+
+(test-write "write-undefined-element (1)"
+	    #vu8(#x06 #x61 #x62 #x63 #x00)
+	    write-undefined-element '("abc" undefined))
+(test-write "write-undefined-element (2)"
+	    #vu8(#x06 #x61 #x62 #x63 #x00)
+	    write-element '("abc" undefined))
+
+(test-write "write-object-id-element (1)"
+	    #vu8(#x07
+		 #x61 #x62 #x63 #x00
+		 #x5a #xfe #xc5 #xca
+		 #x85 #x9a #x71 #xdf
+		 #xd7 #x5d #xa8 #xd0)
+	    write-object-id-element
+	    '("abc" (object-id "5afec5ca859a71dfd75da8d0")))
+(test-write "write-object-id-element (2)"
+	    #vu8(#x07
+		 #x61 #x62 #x63 #x00
+		 #x5a #xfe #xc5 #xca
+		 #x85 #x9a #x71 #xdf
+		 #xd7 #x5d #xa8 #xd0)
+	    write-element
+	    '("abc" (object-id "5afec5ca859a71dfd75da8d0")))
+
+(test-write "write-boolean-element (1)"
+	    #vu8(#x08 #x61 #x62 #x63 #x00 #x00)
+	    write-boolean-element '("abc" #f))
+(test-write "write-boolean-element (2)"
+	    #vu8(#x08 #x61 #x62 #x63 #x00 #x01)
+	    write-boolean-element '("abc" #t))
+(test-write "write-boolean-element (3)"
+	    #vu8(#x08 #x61 #x62 #x63 #x00 #x01)
+	    write-element '("abc" #t))
+
 (test-end)
