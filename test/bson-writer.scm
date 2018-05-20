@@ -13,6 +13,11 @@
 (test-write "write-cstring (1)" #vu8(#x61 #x62 #x63 #x00) write-cstring "abc")
 (test-error "write-cstring (2)" bson-error? (write-cstring #f "ab\x0;c"))
 
+(test-write "write-string (1)" #vu8(#x04 #x00 #x00 #x00 #x61 #x62 #x63 #x00)
+	    write-string "abc")
+(test-write "write-string (2)" #vu8(#x05 #x00 #x00 #x00 #x61 #x62 #x00 #x63 #x00)
+	    write-string "ab\x0;c")
+
 (test-write "write-double (1)" #vu8(#x1f #x85 #xeb #x51 #xb8 #x1e #x09 #x40)
 	    write-double 3.14)
 
@@ -24,5 +29,9 @@
 (test-write "write-double-element"
 	    #vu8(#x01 #x61 #x62 #x63 #x00 #x1f #x85 #xeb #x51 #xb8 #x1e #x09 #x40)
 	    write-double-element '("abc" 3.14))
+
+(test-write "write-string-element"
+	    #vu8(#x02 #x61 #x62 #x63 #x00 #x04 #x00 #x00 #x00 #x61 #x62 #x63 #x00)
+	    write-string-element '("abc" "abc"))
 
 (test-end)

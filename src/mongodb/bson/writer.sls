@@ -35,8 +35,11 @@
 	    write-min-key-element
 	    write-max-key-element
 	    write-double-element
+	    write-string-element
 	    
 	    write-cstring
+	    write-string
+	    write-int32
 	    write-double)
     (import (rnrs)
 	    (mongodb bson conditions))
@@ -71,6 +74,11 @@
   (write-cstring out (car element))
   (write-double out (cadr element)))
 
+(define (write-string-element out element)
+  (put-u8 out #x02)
+  (write-cstring out (car element))
+  (write-string out (cadr element)))
+
 (define (type-of? name) (lambda (v) (and (pair? v) (eq? name (car v)))))
 (define (symbol-of? name) (lambda (v) (eq? name v)))
 (define *writers*
@@ -78,6 +86,7 @@
     (,(symbol-of? 'max-key) ,write-max-key-element)
     ;; other numbers are typed.
     ,number? ,write-double-element
+    ,string? ,write-string-element
     ))
 
 (define (write-cstring out cstring)
@@ -88,10 +97,22 @@
 	(raise-bson-write-error 'bson-write
 				"cstring mustn't contain 0" cstring)))))
 
+(define (write-string out cstring)
+  (let ((bv (string->utf8 cstring)))
+    (write-int32 out (+ (bytevector-length bv) 1))
+    (put-bytevector out bv)
+    (put-u8 out 0)))
+
 (define (write-double out double)
   ;; FIXME a bit inefficient
   (let ((bv (make-bytevector 8)))
     (bytevector-ieee-double-set! bv 0 double (endianness little))
+    (put-bytevector out bv)))
+
+(define (write-int32 out s32)
+  ;; FIXME a bit inefficient
+  (let ((bv (make-bytevector 4)))
+    (bytevector-s32-set! bv 0 s32 (endianness little))
     (put-bytevector out bv)))
 
 (define (raise-bson-write-error who msg . irr)
