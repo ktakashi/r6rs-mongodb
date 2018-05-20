@@ -182,5 +182,106 @@
    (test-error "write-regex-element (5)" bson-error?
 	       (write-regex-element out '("abc" (regex "\\w" "f"))))))
 
+(test-write "write-db-pointer-element (1)"
+	    #vu8(#x0C
+		 #x61 #x62 #x63 #x00
+		 #x02 #x00 #x00 #x00 #x70 #x00 ;; p
+		 1 2 3 4 5 6 7 8 9 10 11 12)
+	    write-db-pointer-element
+	    '("abc" (db-pointer "p" #vu8(1 2 3 4 5 6 7 8 9 10 11 12))))
+(test-write "write-db-pointer-element (2)"
+	    #vu8(#x0C
+		 #x61 #x62 #x63 #x00
+		 #x02 #x00 #x00 #x00 #x70 #x00 ;; p
+		 1 2 3 4 5 6 7 8 9 10 11 12)
+	    write-element
+	    '("abc" (db-pointer "p" #vu8(1 2 3 4 5 6 7 8 9 10 11 12))))
 
+(test-write "write-javascript-element (1)"
+	    #vu8(#x0D
+		 #x61 #x62 #x63 #x00
+		 #x0A #x00 #x00 #x00 
+		 #x76 #x61 #x72 #x20 #x6e #x20 #x3d #x20 #x31
+		 #x00)
+	    write-javascript-element '("abc" (javascript "var n = 1")))
+(test-write "write-javascript-element (2)"
+	    #vu8(#x0D
+		 #x61 #x62 #x63 #x00
+		 #x0A #x00 #x00 #x00 
+		 #x76 #x61 #x72 #x20 #x6e #x20 #x3d #x20 #x31
+		 #x00)
+	    write-element '("abc" (javascript "var n = 1")))
+
+(test-write "write-symbol-element (1)"
+	    #vu8(#x0E
+		 #x61 #x62 #x63 #x00
+		 #x04 #x00 #x00 #x00
+		 #x61 #x62 #x63 #x00)
+	    write-symbol-element '("abc" (symbol "abc")))
+(test-write "write-symbol-element (2)"
+	    #vu8(#x0E
+		 #x61 #x62 #x63 #x00
+		 #x04 #x00 #x00 #x00
+		 #x61 #x62 #x63 #x00)
+	    write-element '("abc" (symbol "abc")))
+
+(test-write "write-javascript/scope-element (1)"
+	    #vu8(#x0F
+		 #x61 #x62 #x63 #x00
+		 #x07 #x00 #x00 #x00
+		 #x6e #x20 #x2b #x3d #x20 #x31
+		 #x00
+		 #x10 #x00 #x00 #x00
+		 #x01 #x6E #x00 ;; n
+		 #x1f #x85 #xeb #x51 #xb8 #x1e #x09 #x40 ;; 3.14
+		 #x00)
+	    write-javascript/scope-element
+	    '("abc" (javascript/scope "n += 1" (("n" 3.14)))))
+(test-write "write-javascript/scope-element (2)"
+	    #vu8(#x0F
+		 #x61 #x62 #x63 #x00
+		 #x07 #x00 #x00 #x00
+		 #x6e #x20 #x2b #x3d #x20 #x31
+		 #x00
+		 #x10 #x00 #x00 #x00
+		 #x01 #x6E #x00 ;; n
+		 #x1f #x85 #xeb #x51 #xb8 #x1e #x09 #x40 ;; 3.14
+		 #x00)
+	    write-element
+	    '("abc" (javascript/scope "n += 1" (("n" 3.14)))))
+
+(test-write "write-int32-element (1)"
+	    #vu8(#x10 #x61 #x62 #x63 #x00 #x01 #x00 #x00 #x00)
+	    write-int32-element '("abc" (s32 1)))
+(test-write "write-int32-element (2)"
+	    #vu8(#x10 #x61 #x62 #x63 #x00 #x01 #x00 #x00 #x00)
+	    write-element '("abc" (s32 1)))
+
+(test-write "write-uint64-element (1)"
+	    #vu8(#x11
+		 #x61 #x62 #x63 #x00
+		 #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00)
+	    write-uint64-element '("abc" (u64 1)))
+(test-write "write-uint64-element (2)"
+	    #vu8(#x11
+		 #x61 #x62 #x63 #x00
+		 #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00)
+	    write-element '("abc" (u64 1)))
+
+(test-write "write-int64-element (1)"
+	    #vu8(#x12
+		 #x61 #x62 #x63 #x00
+		 #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00)
+	    write-int64-element '("abc" (s64 1)))
+(test-write "write-int64-element (2)"
+	    #vu8(#x12
+		 #x61 #x62 #x63 #x00
+		 #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00)
+	    write-element '("abc" (s64 1)))
+
+(test-write "write-document (1)"
+	    #vu8(#x0F #x00 #x00 #x00
+		 #xFF #x61 #x62 #x63 #x00
+		 #x7F #x61 #x62 #x63 #x00 #x00)
+	    write-document '(("abc" min-key) ("abc" max-key)))
 (test-end)

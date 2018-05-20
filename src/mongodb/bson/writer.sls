@@ -45,6 +45,14 @@
 	    write-utc-datetime-element
 	    write-null-element
 	    write-regex-element
+	    write-db-pointer-element
+	    write-javascript-element
+	    write-symbol-element
+	    write-javascript/scope-element
+	    write-int32-element
+	    write-uint64-element
+	    write-int64-element
+	    write-decimal128-element
 	    
 	    write-cstring
 	    write-string
@@ -147,6 +155,52 @@
     (write-cstring out (cadr value))
     (write-cstring out (check-regex-flag-order 'bson-write (caddr value)))))
 
+(define (write-db-pointer-element out element)
+  (put-u8 out #x0C)
+  (write-cstring out (car element))
+  (let ((value (cadr element)))
+    (write-string out (cadr value))
+    (unless (= (bytevector-length (caddr value)) 12)
+      (raise-bson-write-error 'bson-write "DB pointer's value must be a bytevector of length 12"))
+    (put-bytevector out (caddr value))))
+
+(define (write-javascript-element out element)
+  (put-u8 out #x0D)
+  (write-cstring out (car element))
+  (let ((value (cadr element)))
+    (write-string out (cadr value))))
+
+(define (write-symbol-element out element)
+  (put-u8 out #x0E)
+  (write-cstring out (car element))
+  (let ((value (cadr element)))
+    (write-string out (cadr value))))
+
+(define (write-javascript/scope-element out element)
+  (put-u8 out #x0F)
+  (write-cstring out (car element))
+  (let ((value (cadr element)))
+    (write-string out (cadr value))
+    (write-document out (caddr value))))
+
+(define (write-int32-element out element)
+  (put-u8 out #x10)
+  (write-cstring out (car element))
+  (let ((value (cadr element)))
+    (write-int32 out (cadr value))))
+(define (write-uint64-element out element)
+  (put-u8 out #x11)
+  (write-cstring out (car element))
+  (let ((value (cadr element)))
+    (write-uint64 out (cadr value))))
+(define (write-int64-element out element)
+  (put-u8 out #x12)
+  (write-cstring out (car element))
+  (let ((value (cadr element)))
+    (write-int64 out (cadr value))))
+(define (write-decimal128-element out element)
+  (raise-bson-write-error 'bson-write "Decimal 128 is not supported"))
+
 (define (type-of? name) (lambda (v) (and (pair? v) (eq? name (car v)))))
 (define (symbol-of? name) (lambda (v) (eq? name v)))
 (define (document? v) (and (pair? v) (pair? (car v))))
@@ -165,6 +219,14 @@
     (,(type-of? 'utc-datetime) ,write-utc-datetime-element)
     (,(symbol-of? 'null) ,write-null-element)
     (,(type-of? 'regex) ,write-regex-element)
+    (,(type-of? 'db-pointer) ,write-db-pointer-element)
+    (,(type-of? 'javascript) ,write-javascript-element)
+    (,(type-of? 'symbol) ,write-symbol-element)
+    (,(type-of? 'javascript/scope) ,write-javascript/scope-element)
+    (,(type-of? 's32) ,write-int32-element)
+    (,(type-of? 'u64) ,write-uint64-element)
+    (,(type-of? 's64) ,write-int64-element)
+    (,(type-of? 'f128) ,write-decimal128-element)
     ))
 
 (define (write-cstring out cstring)
@@ -196,6 +258,11 @@
   ;; FIXME a bit inefficient
   (let ((bv (make-bytevector 8)))
     (bytevector-s64-set! bv 0 s64 (endianness little))
+    (put-bytevector out bv)))
+(define (write-uint64 out u64)
+  ;; FIXME a bit inefficient
+  (let ((bv (make-bytevector 8)))
+    (bytevector-u64-set! bv 0 u64 (endianness little))
     (put-bytevector out bv)))
 
 (define (raise-bson-write-error who msg . irr)
