@@ -42,6 +42,9 @@
 	    write-undefined-element
 	    write-object-id-element
 	    write-boolean-element
+	    write-utc-datetime-element
+	    write-null-element
+	    write-regex-element
 	    
 	    write-cstring
 	    write-string
@@ -49,6 +52,7 @@
 	    write-double)
     (import (rnrs)
 	    (mongodb bson conditions)
+	    (mongodb bson validators)
 	    (mongodb util bytevectors))
 
 (define (write-document out document)
@@ -128,6 +132,21 @@
   (write-cstring out (car element))
   (put-u8 out (if (cadr element) #x01 #x00)))
 
+(define (write-utc-datetime-element out element)
+  (put-u8 out #x09)
+  (write-cstring out (car element))
+  (let ((value (cadr element)))
+    (write-int64 out (cadr value))))
+(define (write-null-element out element)
+  (put-u8 out #x0A)
+  (write-cstring out (car element)))
+(define (write-regex-element out element)
+  (put-u8 out #x0B)
+  (write-cstring out (car element))
+  (let ((value (cadr element)))
+    (write-cstring out (cadr value))
+    (write-cstring out (check-regex-flag-order 'bson-write (caddr value)))))
+
 (define (type-of? name) (lambda (v) (and (pair? v) (eq? name (car v)))))
 (define (symbol-of? name) (lambda (v) (eq? name v)))
 (define (document? v) (and (pair? v) (pair? (car v))))
@@ -143,6 +162,9 @@
     (,(symbol-of? 'undefined) ,write-undefined-element)
     (,(type-of? 'object-id) ,write-object-id-element)
     (,boolean? ,write-boolean-element)
+    (,(type-of? 'utc-datetime) ,write-utc-datetime-element)
+    (,(symbol-of? 'null) ,write-null-element)
+    (,(type-of? 'regex) ,write-regex-element)
     ))
 
 (define (write-cstring out cstring)
@@ -169,6 +191,11 @@
   ;; FIXME a bit inefficient
   (let ((bv (make-bytevector 4)))
     (bytevector-s32-set! bv 0 s32 (endianness little))
+    (put-bytevector out bv)))
+(define (write-int64 out s64)
+  ;; FIXME a bit inefficient
+  (let ((bv (make-bytevector 8)))
+    (bytevector-s64-set! bv 0 s64 (endianness little))
     (put-bytevector out bv)))
 
 (define (raise-bson-write-error who msg . irr)

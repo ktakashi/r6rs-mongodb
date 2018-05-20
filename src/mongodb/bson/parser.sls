@@ -62,7 +62,8 @@
 	    read-binary)
     (import (rnrs)
 	    (mongodb util bytevectors)
-	    (mongodb bson conditions))
+	    (mongodb bson conditions)
+	    (mongodb bson validators))
 
 ;;; BSON format in S-expr
 ;;; document ::= e-list
@@ -167,19 +168,12 @@
     (values size (list name 'null))))
 
 (define (read-regex-element in)
-  (define valid-flags '(#\i #\l #\m #\s #\u #\x))
-  (define (check-order flags)
-    (let loop ((check (string->list flags)) (compare valid-flags))
-      (cond ((null? check) flags)
-	    ((memq (car check) compare) =>
-	     (lambda (rest) (loop (cdr check) (cdr rest))))
-	    (else (raise-bson-read-error
-		   'bson-read "Unknown flags or invalid order" flags)))))
   (let*-values (((esize name)  (read-cstring in))
 		((rsize regex) (read-cstring in))
 		((fsize flags) (read-cstring in)))
     (values (+ esize rsize fsize)
-	    (list name `(regex ,regex ,(check-order flags))))))
+	    (list name `(regex ,regex
+			       ,(check-regex-flag-order 'bson-read flags))))))
 
 ;; Deprecated but need to support...
 (define (read-db-pointer-element in)

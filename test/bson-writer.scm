@@ -136,4 +136,51 @@
 	    #vu8(#x08 #x61 #x62 #x63 #x00 #x01)
 	    write-element '("abc" #t))
 
+(test-write "write-utc-datetime-element (1)"
+	    #vu8(#x09
+		 #x61 #x62 #x63 #x00
+		 #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00)
+	    write-utc-datetime-element '("abc" (utc-datetime 1)))
+(test-write "write-utc-datetime-element (2)"
+	    #vu8(#x09
+		 #x61 #x62 #x63 #x00
+		 #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00)
+	    write-element '("abc" (utc-datetime 1)))
+
+(test-write "write-null-element (1)"
+	    #vu8(#x0A #x61 #x62 #x63 #x00)
+	    write-null-element '("abc" null))
+(test-write "write-null-element (2)"
+	    #vu8(#x0A #x61 #x62 #x63 #x00)
+	    write-element '("abc" null))
+
+(test-write "write-regex-element (1)"
+	    #vu8(#x0B
+		 #x61 #x62 #x63 #x00
+		 #x5C #x77 #x00 ;; \w
+		 #x69 #x00      ;; i
+		 )
+	    write-regex-element '("abc" (regex "\\w" "i")))
+(test-write "write-regex-element (2)"
+	    #vu8(#x0B
+		 #x61 #x62 #x63 #x00
+		 #x5C #x77 #x00 ;; \w
+		 #x00      ;; 
+		 )
+	    write-regex-element '("abc" (regex "\\w" "")))
+(test-write "write-regex-element (3)"
+	    #vu8(#x0B
+		 #x61 #x62 #x63 #x00
+		 #x5C #x77 #x00 ;; \w
+		 #x69 #x6C #x00      ;; 
+		 )
+	    write-regex-element '("abc" (regex "\\w" "il")))
+(call-with-bytevector-output-port
+ (lambda (out)
+   (test-error "write-regex-element (4)" bson-error?
+	       (write-regex-element out '("abc" (regex "\\w" "li"))))
+   (test-error "write-regex-element (5)" bson-error?
+	       (write-regex-element out '("abc" (regex "\\w" "f"))))))
+
+
 (test-end)
