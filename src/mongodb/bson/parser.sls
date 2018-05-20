@@ -197,7 +197,7 @@
 (define (read-symbol-element in)
   (let*-values (((esize name)   (read-cstring in))
 		((ssize symbol) (read-string in)))
-    (values (+ esize ssize) (list name (string->symbol symbol)))))
+    (values (+ esize ssize) `(,name (symbol ,symbol)))))
 
 (define (read-javascript/scope-element in)
   (let*-values (((esize name)   (read-cstring in))

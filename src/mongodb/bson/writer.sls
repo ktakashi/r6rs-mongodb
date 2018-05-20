@@ -36,6 +36,8 @@
 	    write-max-key-element
 	    write-double-element
 	    write-string-element
+	    write-embedded-document-element
+	    write-array-element
 	    
 	    write-cstring
 	    write-string
@@ -48,6 +50,7 @@
   (let-values (((bout extract) (open-bytevector-output-port)))
     (put-bytevector bout #vu8(0 0 0 0)) ;; put dummy size
     (for-each (lambda (e) (write-element bout e)) document)
+    (put-u8 bout 0)
     (let ((bv (extract)))
       (bytevector-s32-set! bv 0 (bytevector-length bv) (endianness little))
       (put-bytevector out bv))))
@@ -55,8 +58,9 @@
 (define (write-element out element)
   (define (write-by-type out element)
     (cond ((find (lambda (writer) ((car writer) (cadr element))) *writers*) =>
-	   (lambda (writer) ((cdr writer) out element)))
-	  (else (raise-bson-write-error 'bson-write "Unknown element" element))))
+	   (lambda (writer) ((cadr writer) out element)))
+	  (else (raise-bson-write-error 'bson-write
+					"Unknown element" element))))
   (unless (and (pair? element)
 	       (string? (car element)) (not (null? (cdr element))))
     (raise-bson-write-error 'bson-write "Invalid element" element))
@@ -79,14 +83,34 @@
   (write-cstring out (car element))
   (write-string out (cadr element)))
 
+(define (write-embedded-document-element out element)
+  (put-u8 out #x03)
+  (write-cstring out (car element))
+  (write-document out (cadr element)))
+
+(define (write-array-element out element)
+  (define (->document vec)
+    (define len (vector-length vec))
+    (let loop ((i 0) (r '()))
+      (if (= i len)
+	  (reverse r)
+	  (loop (+ i 1)
+		(cons (list (number->string i) (vector-ref vec i)) r)))))
+  (put-u8 out #x04)
+  (write-cstring out (car element))
+  (write-document out (->document (cadr element))))
+
 (define (type-of? name) (lambda (v) (and (pair? v) (eq? name (car v)))))
 (define (symbol-of? name) (lambda (v) (eq? name v)))
+(define (document? v) (and (pair? v) (pair? (car v))))
 (define *writers*
   `((,(symbol-of? 'min-key) ,write-min-key-element)
     (,(symbol-of? 'max-key) ,write-max-key-element)
     ;; other numbers are typed.
-    ,number? ,write-double-element
-    ,string? ,write-string-element
+    (,number? ,write-double-element)
+    (,string? ,write-string-element)
+    (,document? ,write-embedded-document-element)
+    (,vector? ,write-array-element)
     ))
 
 (define (write-cstring out cstring)

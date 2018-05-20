@@ -288,13 +288,13 @@
 			     )))
 
 (test-values "read-symbol-element (1)"
-	     (12 '("abc" abc))
+	     (12 '("abc" (symbol "abc")))
 	     (read-bson read-symbol-element
 			#vu8(#x61 #x62 #x63 #x00
 			     #x04 #x00 #x00 #x00
 			     #x61 #x62 #x63 #x00)))
 (test-values "read-symbol-element (2)"
-	     (13 '("abc" abc))
+	     (13 '("abc" (symbol "abc")))
 	     (read-bson read-element
 			#vu8(#x0E
 			     #x61 #x62 #x63 #x00
