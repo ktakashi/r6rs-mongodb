@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 declare -A implementations=([sagittarius@0.9.2]='false'
 			    [larceny@1.3]='false'
 			    [chez@v9.5]='true')

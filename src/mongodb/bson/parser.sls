@@ -62,6 +62,7 @@
 	    read-binary)
     (import (rnrs)
 	    (mongodb util bytevectors)
+	    (mongodb util ports)
 	    (mongodb bson conditions)
 	    (mongodb bson validators))
 
@@ -234,23 +235,6 @@
      ,read-decimal128-element
      ))
 
-(define (read-cstring in)
-  (let-values (((out extract) (open-bytevector-output-port)))
-    (let loop ((count 0))
-      (let ((u8 (get-u8 in)))
-	(cond ((eof-object? u8)
-	       (raise-bson-read-error 'bson-read "Unexpected EOF"))
-	      ((zero? u8) (values (+ count 1) (utf8->string (extract))))
-	      (else (put-u8 out u8) (loop (+ count 1))))))))
-
-(define (read-string in)
-  (let* ((size (read-int32 in))
-	 (s    (read-n-bytevector in (- size 1)))
-	 (end-mark (get-u8 in)))
-    (unless (eqv? end-mark 0)
-      (raise-bson-read-error 'bson-read "String must be followed by 0"
-			     end-mark))
-    (values (+ size 4) (utf8->string s))))
 
 (define (read-binary in)
   (let* ((size (read-int32 in))
@@ -262,28 +246,22 @@
     (values (+ size 5) `(binary ,subtype ,(read-n-bytevector in size)))))
 
 ;; helpers
-(define (read-int32 in)
-  (let ((bv (read-n-bytevector in 4)))
-    (bytevector-s32-ref bv 0 (endianness little))))
-(define (read-f64 in)
-  (let ((bv (read-n-bytevector in 8)))
-    (bytevector-ieee-double-ref bv 0 (endianness little))))
-(define (read-int64 in)
-  (let ((bv (read-n-bytevector in 8)))
-    (bytevector-s64-ref bv 0 (endianness little))))
-(define (read-uint64 in)
-  (let ((bv (read-n-bytevector in 8)))
-    (bytevector-u64-ref bv 0 (endianness little))))
+(define-syntax define-helper
+  (syntax-rules ()
+    ((_ (name args ...) aggregate)
+     (define (name args ...)
+       (guard (e (else (raise (condition
+			       (make-bson-error)
+			       e))))
+	 (aggregate args ...))))))
 
-;; make sure we read required length of bytes in case of socket port
-(define (read-n-bytevector in n)
-  (define bv (make-bytevector n))
-  (let loop ((r n) (i 0))
-    (let ((c (get-bytevector-n! in bv i r)))
-      (cond ((eof-object? c)
-	     (raise-bson-read-error 'bson-read "Unexpected EOF"))
-	    ((= c r) bv)
-	    (else (loop (- r c) (+ i c)))))))
+(define-helper (read-cstring in) get-cstring)
+(define-helper (read-string in) get-string)
+(define-helper (read-int32 in) 	get-s32)
+(define-helper (read-f64 in)   	get-f64)
+(define-helper (read-int64 in) 	get-s64)
+(define-helper (read-uint64 in) get-u64)
+(define-helper (read-n-bytevector in n) get-n-bytevector)
 
 (define (raise-bson-read-error who msg . irr)
   (raise (condition
