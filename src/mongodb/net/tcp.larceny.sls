@@ -33,7 +33,7 @@
 (library (mongodb net tcp)
     (export tcp-connect)
     (import (rnrs)
-	    (mongodb net socket)
+	    (prefix (mongodb net socket) socket:)
 	    (primitives r5rs:require get-service-by-name make-client-socket
 			socket-input-port socket-output-port))
 
@@ -42,11 +42,11 @@
 		  (let-values (((port . _) (get-service-by-name service)))
 		    port))))
     (let ((s (make-client-socket host port)))
-      (make-socket (lambda ()
-		     (close-input-port (socket-input-port s))
-		     (close-output-port (socket-output-port s)))
-		   (socket-input-port s)
-		   (socket-output-port s)))))
+      (socket:make-socket (lambda ()
+			    (close-input-port (socket-input-port s))
+			    (close-output-port (socket-output-port s)))
+			  (socket-input-port s)
+			  (socket-output-port s)))))
 
 (r5rs:require 'socket)
 )
