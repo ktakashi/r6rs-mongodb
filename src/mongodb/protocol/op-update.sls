@@ -56,17 +56,21 @@
 	      (define (check-header header)
 		(unless (msg-header? header)
 		  (assertion-violation 'make-op-update
-				       "MsgHeader required" header)))
+				       "MsgHeader required" header))
+		(unless (eqv? (msg-header-op-code header) *op-code:update*)
+		  (assertion-violation 'make-op-update
+				       "Invalid op-code" header)))
 	      (case-lambda
-	       ((header)
-		(check-header header)
-		((p header) 0 #f #f #f #f))
+	       (()
+		(let ((header (make-msg-header)))
+		  (msg-header-op-code-set! header *op-code:update*)
+		  ((p header) 0 #f #f #f #f)))
 	       ((header zero fcn fl s u)
 		(check-header header)
 		((p header) zero fcn fl s u))))))
 
 (define (read-op-update in header)
-  (read-op-update! in (make-op-update header)))
+  (read-op-update! in (make-op-update header 0 0 0 '() '())))
 
 (define (read-op-update! in op-update)
   (define header (mongodb-protocol-message-header op-update))
@@ -77,8 +81,8 @@
       (let ((flags (get-u32 in)))
 	(let*-values (((ssize selector) (read-document in))
 		      ((usize update) (read-document in)))
-	  (unless (= (msg-header-message-length header)
-		     (+ ssize usize fsize 8 *msg-header-size*))
+	  (unless (eqv? (msg-header-message-length header)
+			(+ ssize usize fsize 8 *msg-header-size*))
 	    (assertion-violation 'read-op-update!
 	     "Invalid size of message"
 	     `(expected ,(msg-header-message-length header))

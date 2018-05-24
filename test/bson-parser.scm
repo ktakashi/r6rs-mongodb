@@ -379,5 +379,8 @@
 	    (read-bson read-document #vu8(#x0F #x00 #x00 #x00
 					  #xFF #x61 #x62 #x63 #x00
 					  #x7F #x61 #x62 #x63 #x00 #x00)))
+(test-values "read-documet (4)"
+	     (#x05 '())
+	     (read-bson read-document #vu8(#x05 #x00 #x00 #x00 #x00)))
 
 (test-end)

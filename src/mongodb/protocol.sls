@@ -1,6 +1,6 @@
 ;;; -*- mode:scheme; coding:utf-8; -*-
 ;;;
-;;; mongodb/protocol/msg-header.sls - Wire protocol: MsgHeader
+;;; mongodb/protocol.sls - Wire protocol
 ;;;
 ;;;   Copyright (c) 2018  Takashi Kato  <ktakashi@ymail.com>
 ;;;
@@ -29,67 +29,33 @@
 ;;;
 
 #!r6rs
-(library (mongodb protocol msg-header)
-    (export msg-header? make-msg-header
-	    msg-header-message-length msg-header-message-length-set!
+(library (mongodb protocol)
+    (export read-mongodb-message
+
+	    msg-header? make-msg-header
+	    msg-header-message-length
 	    msg-header-request-id msg-header-request-id-set!
 	    msg-header-response-to msg-header-response-to-set!
-	    msg-header-op-code msg-header-op-code-set!
+	    msg-header-op-code
 
-	    read-msg-header
-	    read-msg-header!
-
-	    mongodb-protocol-message mongodb-protocol-message?
+	    mongodb-protocol-message?
 	    mongodb-protocol-message-header
 
-	    *msg-header-size*
-	    *op-code:reply*
-	    *op-code:update*
-	    *op-code:insert*
-	    *op-code:query*
-	    *op-code:get-more*
-	    *op-code:delete*
-	    *op-code:kill-cursors*
-	    *op-code:msg*
+	    op-update? make-op-update
+	    op-update-full-collection-name
+	    op-update-flags
+	    op-update-selector
+	    op-update-update
 	    )
     (import (rnrs)
-	    (mongodb util ports))
+	    (mongodb protocol msg-header)
+	    (mongodb protocol op-update))
 
-(define *msg-header-size* 16)
-(define *op-code:reply*        1)
-(define *op-code:update*       2001)
-(define *op-code:insert*       2002)
-(define *op-code:query*        2004)
-(define *op-code:get-more*     2005)
-(define *op-code:delete*       2006)
-(define *op-code:kill-cursors* 2007)
-(define *op-code:msg*          2013)
-
-(define-record-type msg-header
-  (fields (mutable message-length) ;; int32
-	  (mutable request-id)     ;; int32
-	  (mutable response-to)    ;; int32
-	  (mutable op-code))       ;; int32
-  (protocol (lambda (p)
-	      (case-lambda
-	       (() (p #f #f #f #f))
-	       ((len id to op) (p len id to op))))))
-
-(define (read-msg-header in)
-  (read-msg-header! in (make-msg-header)))
-
-(define (read-msg-header! in msg)
-  (let* ((len (get-s32 in))
-	 (id (get-s32 in))
-	 (to (get-s32 in))
-	 (op (get-s32 in)))
-    (msg-header-message-length-set! msg len)
-    (msg-header-request-id-set! msg id)
-    (msg-header-response-to-set! msg to)
-    (msg-header-op-code-set! msg op)
-    msg))
-
-(define-record-type mongodb-protocol-message
-  (fields header))
+(define (read-mongodb-message in)
+  (let* ((header (read-msg-header in))
+	 (op-code (msg-header-op-code header)))
+    (cond ((= op-code *op-code:update*) (read-op-update in header))
+	  (else
+	   (assertion-violation 'read-msg-header "Unknown OP code" op-code)))))
 
 )

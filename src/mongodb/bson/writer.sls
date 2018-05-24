@@ -61,7 +61,8 @@
     (import (rnrs)
 	    (mongodb bson conditions)
 	    (mongodb bson validators)
-	    (mongodb util bytevectors))
+	    (mongodb util bytevectors)
+	    (mongodb util ports))
 
 (define (write-document out document)
   (let-values (((bout extract) (open-bytevector-output-port)))
@@ -243,27 +244,10 @@
     (put-bytevector out bv)
     (put-u8 out 0)))
 
-(define (write-double out double)
-  ;; FIXME a bit inefficient
-  (let ((bv (make-bytevector 8)))
-    (bytevector-ieee-double-set! bv 0 double (endianness little))
-    (put-bytevector out bv)))
-
-(define (write-int32 out s32)
-  ;; FIXME a bit inefficient
-  (let ((bv (make-bytevector 4)))
-    (bytevector-s32-set! bv 0 s32 (endianness little))
-    (put-bytevector out bv)))
-(define (write-int64 out s64)
-  ;; FIXME a bit inefficient
-  (let ((bv (make-bytevector 8)))
-    (bytevector-s64-set! bv 0 s64 (endianness little))
-    (put-bytevector out bv)))
-(define (write-uint64 out u64)
-  ;; FIXME a bit inefficient
-  (let ((bv (make-bytevector 8)))
-    (bytevector-u64-set! bv 0 u64 (endianness little))
-    (put-bytevector out bv)))
+(define write-double put-f64)
+(define write-int32 put-s32)
+(define write-int64 put-s64)
+(define write-uint64 put-u64)
 
 (define (raise-bson-write-error who msg . irr)
   (raise (condition

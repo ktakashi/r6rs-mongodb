@@ -36,6 +36,13 @@
 	    get-s64
 	    get-f64
 	    get-n-bytevector
+
+	    put-u32
+	    put-s32
+	    put-u64
+	    put-s64
+	    put-f64
+
 	    ;; these are common in wire protocol
 	    get-cstring
 	    get-string
@@ -58,6 +65,19 @@
 (define (get-u64 in)
   (let ((bv (get-n-bytevector in 8)))
     (bytevector-u64-ref bv 0 (endianness little))))
+
+(define-syntax define-put
+  (syntax-rules ()
+    ((_ name size proc)
+     (define (name out v)
+       (define bv (make-bytevector size))
+       (proc bv 0 v (endianness little))
+       (put-bytevector out bv)))))
+(define-put put-u32 4 bytevector-u32-set!)
+(define-put put-s32 4 bytevector-s32-set!)
+(define-put put-u64 8 bytevector-u64-set!)
+(define-put put-s64 8 bytevector-s64-set!)
+(define-put put-f64 8 bytevector-ieee-double-set!)
 
 ;; return 2 values 
 (define (get-cstring in)
