@@ -40,6 +40,7 @@
 	    read-op-update!
 	    )
     (import (rnrs)
+	    (mongodb util ports)
 	    (mongodb protocol msg-header)
 	    (mongodb bson parser))
 
@@ -52,9 +53,17 @@
 	  (mutable update)		 ;; document
 	  )
   (protocol (lambda (p)
+	      (define (check-header header)
+		(unless (msg-header? header)
+		  (assertion-violation 'make-op-update
+				       "MsgHeader required" header)))
 	      (case-lambda
-	       ((header) ((p header) 0 #f #f #f #f))
-	       ((header zero fcn fl s u) ((p header) zero fcn fl s u))))))
+	       ((header)
+		(check-header header)
+		((p header) 0 #f #f #f #f))
+	       ((header zero fcn fl s u)
+		(check-header header)
+		((p header) zero fcn fl s u))))))
 
 (define (read-op-update in header)
   (read-op-update! in (make-op-update header)))
@@ -67,7 +76,7 @@
 	 ;; when the most significant bit is set)
       (let ((flags (get-u32 in)))
 	(let*-values (((ssize selector) (read-document in))
-		      ((usize selector) (read-document in)))
+		      ((usize update) (read-document in)))
 	  (unless (= (msg-header-message-length header)
 		     (+ ssize usize fsize 8 *msg-header-size*))
 	    (assertion-violation 'read-op-update!

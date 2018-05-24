@@ -37,9 +37,17 @@
 	    msg-header-op-code
 
 	    read-msg-header
-	    read-msg-header!)
+	    read-msg-header!
+
+	    mongodb-protocol-message mongodb-protocol-message?
+	    mongodb-protocol-message-header mongodb-protocol-message-header-set!
+
+	    *msg-header-size*
+	    )
     (import (rnrs)
 	    (mongodb util ports))
+
+(define *msg-header-size* 16)
 
 (define-record-type msg-header
   (fields (mutable message-length) ;; int32
@@ -64,5 +72,8 @@
     (msg-header-response-to-set! msg to)
     (msg-header-op-code-set! msg op)
     msg))
+
+(define-record-type mongodb-protocol-message
+  (fields (mutable header)))
 
 )
