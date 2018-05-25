@@ -45,7 +45,9 @@
 
 	    ;; these are common in wire protocol
 	    get-cstring
-	    get-string
+	    get-mongo-string
+	    put-cstring
+	    put-mongo-string ;; unfortunate name...
 	    )
     (import (rnrs))
 
@@ -90,7 +92,7 @@
 	      (else (put-u8 out u8) (loop (+ count 1))))))))
 
 ;; return 2 values 
-(define (get-string in)
+(define (get-mongo-string in)
   (let* ((size (get-s32 in))
 	 (s    (get-n-bytevector in (- size 1)))
 	 (end-mark (get-u8 in)))
@@ -110,8 +112,27 @@
 	    ((= c r) bv)
 	    (else (loop (- r c) (+ i c)))))))
 
+(define (put-cstring out cstring)
+  (let ((bv (string->utf8 cstring)))
+    (do ((len (bytevector-length bv)) (i 0 (+ i 1)))
+	((= i len) (put-bytevector out bv) (put-u8 out 0))
+      (when (zero? (bytevector-u8-ref bv i))
+	(raise-write-error 'put-cstring
+			   "cstring mustn't contain 0" cstring)))))
+(define (put-mongo-string out string)
+  (let ((bv (string->utf8 string)))
+    (put-s32 out (+ (bytevector-length bv) 1))
+    (put-bytevector out bv)
+    (put-u8 out 0)))
+
 (define (raise-read-error who msg . irr)
   (raise (condition (make-i/o-read-error)
+		    (make-who-condition who)
+		    (make-message-condition msg)
+		    (make-irritants-condition irr))))
+
+(define (raise-write-error who msg . irr)
+  (raise (condition (make-i/o-write-error)
 		    (make-who-condition who)
 		    (make-message-condition msg)
 		    (make-irritants-condition irr))))

@@ -38,11 +38,13 @@
 
 	    read-op-update
 	    read-op-update!
+	    write-op-update
 	    )
     (import (rnrs)
 	    (mongodb util ports)
 	    (mongodb protocol msg-header)
-	    (mongodb bson parser))
+	    (mongodb bson parser)
+	    (mongodb bson))
 
 (define-record-type op-update
   (parent mongodb-protocol-message)
@@ -95,4 +97,14 @@
 	  (op-update-selector-set! op-update selector)
 	  (op-update-update-set! op-update update)
 	  op-update)))))
+
+;; this doesn't emit header
+;; so must be called after header is written
+(define (write-op-update out op-update)
+  (put-s32 out 0) ;; zero
+  (put-cstring out (op-update-full-collection-name op-update))
+  (put-u32 out (op-update-flags op-update))
+  (bson-write (op-update-selector op-update) out)
+  (bson-write (op-update-update op-update) out))
+	   
 )

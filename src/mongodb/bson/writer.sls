@@ -231,19 +231,10 @@
     ))
 
 (define (write-cstring out cstring)
-  (let ((bv (string->utf8 cstring)))
-    (do ((len (bytevector-length bv)) (i 0 (+ i 1)))
-	((= i len) (put-bytevector out bv) (put-u8 out 0))
-      (when (zero? (bytevector-u8-ref bv i))
-	(raise-bson-write-error 'bson-write
-				"cstring mustn't contain 0" cstring)))))
+  (guard (e (else (raise (condition (make-bson-error) e))))
+    (put-cstring out cstring)))
 
-(define (write-string out cstring)
-  (let ((bv (string->utf8 cstring)))
-    (write-int32 out (+ (bytevector-length bv) 1))
-    (put-bytevector out bv)
-    (put-u8 out 0)))
-
+(define write-string put-mongo-string)
 (define write-double put-f64)
 (define write-int32 put-s32)
 (define write-int64 put-s64)
@@ -252,7 +243,7 @@
 (define (raise-bson-write-error who msg . irr)
   (raise (condition
 	  (make-bson-error)
-	  (make-i/o-read-error)
+	  (make-i/o-write-error)
 	  (make-who-condition who)
 	  (make-message-condition msg)
 	  (make-irritants-condition irr))))

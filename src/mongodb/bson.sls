@@ -45,9 +45,9 @@
   (case-lambda
    ((bson) (bson-write bson (current-output-port)))
    ((bson out)
-    (unless (pair? bson)
-      (assertion-violation 'bson-write "BSON document must a list" out))
-    (unless (binary-output-port? in)
+    (unless (or (null? bson) (pair? bson))
+      (assertion-violation 'bson-write "BSON document must a list" bson))
+    (unless (and (binary-port? out) (output-port? out))
       (assertion-violation 'bson-write "Binary output port required" out))
     (write-document out bson))))
 
@@ -56,7 +56,7 @@
   (case-lambda
    (() (bson-read (current-input-port)))
    ((in)
-    (unless (binary-input-port? in)
+    (unless (and (binary-port? in) (input-port? in))
       (assertion-violation 'bson-read "Binary input port required" in))
     (let-values (((size bson) (read-document in)))
       bson))))

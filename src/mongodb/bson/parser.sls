@@ -256,7 +256,7 @@
 	 (aggregate args ...))))))
 
 (define-helper (read-cstring in) get-cstring)
-(define-helper (read-string in) get-string)
+(define-helper (read-string in) get-mongo-string)
 (define-helper (read-int32 in) 	get-s32)
 (define-helper (read-f64 in)   	get-f64)
 (define-helper (read-int64 in) 	get-s64)

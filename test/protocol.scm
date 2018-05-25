@@ -29,6 +29,10 @@
   (let ((msg (read-mongodb-message (bin op-update-message))))
     (test-assert (mongodb-protocol-message? msg))
     (test-assert (msg-header? (mongodb-protocol-message-header msg)))
-    (test-equal "abc" (op-update-full-collection-name msg))))
+    (test-equal "abc" (op-update-full-collection-name msg))
+
+    (let-values (((out extract) (open-bytevector-output-port)))
+      (test-assert "write-mongodb-message" (write-mongodb-message out msg))
+      (test-equal "compare op-update" op-update-message (extract)))))
 
 (test-end)

@@ -39,6 +39,8 @@
 	    read-msg-header
 	    read-msg-header!
 
+	    write-msg-header
+
 	    mongodb-protocol-message mongodb-protocol-message?
 	    mongodb-protocol-message-header
 
@@ -88,6 +90,13 @@
     (msg-header-response-to-set! msg to)
     (msg-header-op-code-set! msg op)
     msg))
+
+
+(define (write-msg-header out header)
+  (put-s32 out (msg-header-message-length header))
+  (put-s32 out (msg-header-request-id header))
+  (put-s32 out (msg-header-response-to header))
+  (put-s32 out (msg-header-op-code header)))
 
 (define-record-type mongodb-protocol-message
   (fields header))

@@ -31,6 +31,7 @@
 #!r6rs
 (library (mongodb protocol)
     (export read-mongodb-message
+	    write-mongodb-message
 
 	    msg-header? make-msg-header
 	    msg-header-message-length
@@ -58,4 +59,18 @@
 	  (else
 	   (assertion-violation 'read-msg-header "Unknown OP code" op-code)))))
 
+
+(define (write-mongodb-message out msg)
+  (define header (mongodb-protocol-message-header msg))
+  (let-values (((bout extract) (open-bytevector-output-port)))
+    (cond ((op-update? msg) (write-op-update bout msg))
+	  (else
+	   (assertion-violation 'write-mongodb-message
+				"Unknown protocol message" msg)))
+    (let ((bv (extract)))
+      (msg-header-message-length-set! header (+ (bytevector-length bv)
+						*msg-header-size*))
+      (write-msg-header out header)
+      (put-bytevector out bv)
+      (flush-output-port out))))
 )
