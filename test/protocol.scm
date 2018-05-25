@@ -29,7 +29,8 @@
   (let ((msg (read-mongodb-message (bin op-update-message))))
     (test-assert (mongodb-protocol-message? msg))
     (test-assert (msg-header? (mongodb-protocol-message-header msg)))
-    (test-equal "abc" (op-update-full-collection-name msg))
+    (test-equal "abc" (mongodb-query-message-full-collection-name msg))
+    (test-equal 0 (mongodb-flagged-query-message-flags msg))
 
     (let-values (((out extract) (open-bytevector-output-port)))
       (test-assert "write-mongodb-message" (write-mongodb-message out msg))
@@ -46,7 +47,8 @@
   (let ((msg (read-mongodb-message (bin op-insert-message))))
     (test-assert (mongodb-protocol-message? msg))
     (test-assert (msg-header? (mongodb-protocol-message-header msg)))
-    (test-equal "abc" (op-insert-full-collection-name msg))
+    (test-equal "abc" (mongodb-query-message-full-collection-name msg))
+    (test-equal 0 (mongodb-flagged-query-message-flags msg))
     (test-equal '#(() ()) (op-insert-documents msg))
     
     (let-values (((out extract) (open-bytevector-output-port)))

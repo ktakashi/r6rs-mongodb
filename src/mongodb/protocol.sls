@@ -42,15 +42,17 @@
 	    mongodb-protocol-message?
 	    mongodb-protocol-message-header
 
+	    mongodb-query-message?
+	    mongodb-query-message-full-collection-name
+	    
+	    mongodb-flagged-query-message?
+	    mongodb-flagged-query-message-flags
+	    
 	    op-update? make-op-update
-	    op-update-full-collection-name
-	    op-update-flags
 	    op-update-selector
 	    op-update-update
 
 	    op-insert? make-op-insert
-	    op-insert-full-collection-name
-	    op-insert-flags
 	    op-insert-documents
 	    )
     (import (rnrs)

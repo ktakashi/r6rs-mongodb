@@ -31,8 +31,6 @@
 #!r6rs
 (library (mongodb protocol op-insert)
     (export op-insert? make-op-insert
-	    op-insert-flags
-	    op-insert-full-collection-name
 	    op-insert-documents
 
 	    read-op-insert
@@ -46,9 +44,9 @@
 	    (mongodb bson))
 
 (define-record-type op-insert
-  (parent mongodb-protocol-message)
-  (fields (mutable flags)		 ;; int32
-	  (mutable full-collection-name) ;; cstring
+  (parent mongodb-flagged-query-message)
+  (fields ;;(mutable flags)		 ;; int32
+	  ;;(mutable full-collection-name) ;; cstring
 	  (mutable documents)		 ;; document*
 	  )
   (protocol (lambda (p)
@@ -63,13 +61,13 @@
 	       (()
 		(let ((header (make-msg-header)))
 		  (msg-header-op-code-set! header *op-code:insert*)
-		  ((p header) 0 #f '#())))
+		  ((p header #f 0) '#())))
 	       ((header fl fcn doc*)
 		(check-header header)
 		(unless (vector? doc*)
 		  (assertion-violation 'make-op-insert
 				       "documents must be a vector" doc*))
-		((p header) fl fcn doc*))))))
+		((p header fcn fl) doc*))))))
 
 (define (read-op-insert in header)
   (read-op-insert! in (make-op-insert header 0 #f '#())))
@@ -77,8 +75,8 @@
 (define (read-op-insert! in op-insert)
   (define header (mongodb-protocol-message-header op-insert))
   (define (finish op-insert flags fcn doc*)
-    (op-insert-flags-set! op-insert flags)
-    (op-insert-full-collection-name-set! op-insert fcn)
+    (mongodb-flagged-query-message-flags-set! op-insert flags)
+    (mongodb-query-message-full-collection-name-set! op-insert fcn)
     (op-insert-documents-set! op-insert doc*)
     op-insert)
   (let ((flags (get-u32 in)))
@@ -95,8 +93,8 @@
 ;; this doesn't emit header
 ;; so must be called after header is written
 (define (write-op-insert out op-insert)
-  (put-u32 out (op-insert-flags op-insert))
-  (put-cstring out (op-insert-full-collection-name op-insert))
+  (put-u32 out (mongodb-flagged-query-message-flags op-insert))
+  (put-cstring out (mongodb-query-message-full-collection-name op-insert))
   (vector-for-each (lambda (doc) (bson-write doc out))
 		   (op-insert-documents op-insert)))
 	   

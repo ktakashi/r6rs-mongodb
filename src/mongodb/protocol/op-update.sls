@@ -31,8 +31,6 @@
 #!r6rs
 (library (mongodb protocol op-update)
     (export op-update? make-op-update
-	    op-update-full-collection-name
-	    op-update-flags
 	    op-update-selector
 	    op-update-update
 
@@ -47,10 +45,10 @@
 	    (mongodb bson))
 
 (define-record-type op-update
-  (parent mongodb-protocol-message)
+  (parent mongodb-flagged-query-message)
   (fields zero				 ;; int32 (reserved)
-	  (mutable full-collection-name) ;; cstring
-	  (mutable flags)		 ;; int32
+	  ;; (mutable full-collection-name) ;; cstring
+	  ;; (mutable flags)		 ;; int32
 	  (mutable selector)		 ;; document
 	  (mutable update)		 ;; document
 	  )
@@ -66,10 +64,10 @@
 	       (()
 		(let ((header (make-msg-header)))
 		  (msg-header-op-code-set! header *op-code:update*)
-		  ((p header) 0 #f #f #f #f)))
+		  ((p header #f 0) 0 #f #f)))
 	       ((header zero fcn fl s u)
 		(check-header header)
-		((p header) zero fcn fl s u))))))
+		((p header fcn fl) zero s u))))))
 
 (define (read-op-update in header)
   (read-op-update! in (make-op-update header 0 0 0 '() '())))
@@ -92,8 +90,8 @@
 	  (unless (zero? zero)
 	    (assertion-violation 'read-op-update!
 				 "Reserved value contains non 0" zero))
-	  (op-update-full-collection-name-set! op-update fcn)
-	  (op-update-flags-set! op-update flags)
+	  (mongodb-query-message-full-collection-name-set! op-update fcn)
+	  (mongodb-flagged-query-message-flags-set! op-update flags)
 	  (op-update-selector-set! op-update selector)
 	  (op-update-update-set! op-update update)
 	  op-update)))))
@@ -102,8 +100,8 @@
 ;; so must be called after header is written
 (define (write-op-update out op-update)
   (put-s32 out 0) ;; zero
-  (put-cstring out (op-update-full-collection-name op-update))
-  (put-u32 out (op-update-flags op-update))
+  (put-cstring out (mongodb-query-message-full-collection-name op-update))
+  (put-u32 out (mongodb-flagged-query-message-flags op-update))
   (bson-write (op-update-selector op-update) out)
   (bson-write (op-update-update op-update) out))
 	   

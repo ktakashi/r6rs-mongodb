@@ -44,6 +44,14 @@
 	    mongodb-protocol-message mongodb-protocol-message?
 	    mongodb-protocol-message-header
 
+	    mongodb-query-message mongodb-query-message?
+	    mongodb-query-message-full-collection-name
+	    mongodb-query-message-full-collection-name-set!
+
+	    mongodb-flagged-query-message mongodb-flagged-query-message?
+	    mongodb-flagged-query-message-flags
+	    mongodb-flagged-query-message-flags-set!
+	    
 	    *msg-header-size*
 	    *op-code:reply*
 	    *op-code:update*
@@ -99,6 +107,13 @@
   (put-s32 out (msg-header-op-code header)))
 
 (define-record-type mongodb-protocol-message
-  (fields header))
+  (fields header)) ;; MsgHeader
 
+(define-record-type mongodb-query-message
+  (parent mongodb-protocol-message)
+  (fields (mutable full-collection-name))) ;; cstring
+
+(define-record-type mongodb-flagged-query-message
+  (parent mongodb-query-message)
+  (fields (mutable flags)))
 )
