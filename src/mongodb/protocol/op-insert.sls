@@ -1,6 +1,6 @@
 ;;; -*- mode:scheme; coding:utf-8; -*-
 ;;;
-;;; mongodb/protocol/op-update.sls - Wire protocol: OP_UPDATE
+;;; mongodb/protocol/op-insert.sls - Wire protocol: OP_INSERT
 ;;;
 ;;;   Copyright (c) 2018  Takashi Kato  <ktakashi@ymail.com>
 ;;;
@@ -29,16 +29,15 @@
 ;;;
 
 #!r6rs
-(library (mongodb protocol op-update)
-    (export op-update? make-op-update
-	    op-update-full-collection-name
-	    op-update-flags
-	    op-update-selector
-	    op-update-update
+(library (mongodb protocol op-insert)
+    (export op-insert? make-op-insert
+	    op-insert-flags
+	    op-insert-full-collection-name
+	    op-insert-documents
 
-	    read-op-update
-	    read-op-update!
-	    write-op-update
+	    read-op-insert
+	    read-op-insert!
+	    write-op-insert
 	    )
     (import (rnrs)
 	    (mongodb util ports)
@@ -46,65 +45,59 @@
 	    (mongodb bson parser)
 	    (mongodb bson))
 
-(define-record-type op-update
+(define-record-type op-insert
   (parent mongodb-protocol-message)
-  (fields zero				 ;; int32 (reserved)
+  (fields (mutable flags)		 ;; int32
 	  (mutable full-collection-name) ;; cstring
-	  (mutable flags)		 ;; int32
-	  (mutable selector)		 ;; document
-	  (mutable update)		 ;; document
+	  (mutable documents)		 ;; document*
 	  )
   (protocol (lambda (p)
 	      (define (check-header header)
 		(unless (msg-header? header)
-		  (assertion-violation 'make-op-update
+		  (assertion-violation 'make-op-insert
 				       "MsgHeader required" header))
-		(unless (eqv? (msg-header-op-code header) *op-code:update*)
-		  (assertion-violation 'make-op-update
+		(unless (eqv? (msg-header-op-code header) *op-code:insert*)
+		  (assertion-violation 'make-op-insert
 				       "Invalid op-code" header)))
 	      (case-lambda
 	       (()
 		(let ((header (make-msg-header)))
-		  (msg-header-op-code-set! header *op-code:update*)
-		  ((p header) 0 #f #f #f #f)))
-	       ((header zero fcn fl s u)
+		  (msg-header-op-code-set! header *op-code:insert*)
+		  ((p header) 0 #f '#())))
+	       ((header fl fcn doc*)
 		(check-header header)
-		((p header) zero fcn fl s u))))))
+		(unless (vector? doc*)
+		  (assertion-violation 'make-op-insert
+				       "documents must be a vector" doc*))
+		((p header) fl fcn doc*))))))
 
-(define (read-op-update in header)
-  (read-op-update! in (make-op-update header 0 0 0 '() '())))
+(define (read-op-insert in header)
+  (read-op-insert! in (make-op-insert header 0 #f '#())))
 
-(define (read-op-update! in op-update)
-  (define header (mongodb-protocol-message-header op-update))
-  (let ((zero (get-s32 in)))
+(define (read-op-insert! in op-insert)
+  (define header (mongodb-protocol-message-header op-insert))
+  (define (finish op-insert flags fcn doc*)
+    (op-insert-flags-set! op-insert flags)
+    (op-insert-full-collection-name-set! op-insert fcn)
+    (op-insert-documents-set! op-insert doc*)
+    op-insert)
+  (let ((flags (get-u32 in)))
     (let-values (((fsize fcn) (get-cstring in)))
-	 ;; even thought it says int32 we use u32 (for future
-	 ;; when the most significant bit is set)
-      (let ((flags (get-u32 in)))
-	(let*-values (((ssize selector) (read-document in))
-		      ((usize update) (read-document in)))
-	  (unless (eqv? (msg-header-message-length header)
-			(+ ssize usize fsize 8 *msg-header-size*))
-	    (assertion-violation 'read-op-update!
-	     "Invalid size of message"
-	     `(expected ,(msg-header-message-length header))
-	     `(got ,(+ ssize usize fsize 8 *msg-header-size*))))
-	  (unless (zero? zero)
-	    (assertion-violation 'read-op-update!
-				 "Reserved value contains non 0" zero))
-	  (op-update-full-collection-name-set! op-update fcn)
-	  (op-update-flags-set! op-update flags)
-	  (op-update-selector-set! op-update selector)
-	  (op-update-update-set! op-update update)
-	  op-update)))))
+      (define rest
+	(- (msg-header-message-length header) *msg-header-size* fsize 4))
+      ;; we need to trace the size of the message here
+      (let loop ((rest rest) (doc* '()))
+	(if (zero? rest)
+	    (finish op-insert flags fcn (list->vector (reverse doc*)))
+	    (let-values (((dsize doc) (read-document in)))
+	      (loop (- rest dsize) (cons doc doc*))))))))
 
 ;; this doesn't emit header
 ;; so must be called after header is written
-(define (write-op-update out op-update)
-  (put-s32 out 0) ;; zero
-  (put-cstring out (op-update-full-collection-name op-update))
-  (put-u32 out (op-update-flags op-update))
-  (bson-write (op-update-selector op-update) out)
-  (bson-write (op-update-update op-update) out))
+(define (write-op-insert out op-insert)
+  (put-u32 out (op-insert-flags op-insert))
+  (put-cstring out (op-insert-full-collection-name op-insert))
+  (vector-for-each (lambda (doc) (bson-write doc out))
+		   (op-insert-documents op-insert)))
 	   
 )

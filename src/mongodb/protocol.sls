@@ -47,15 +47,22 @@
 	    op-update-flags
 	    op-update-selector
 	    op-update-update
+
+	    op-insert? make-op-insert
+	    op-insert-full-collection-name
+	    op-insert-flags
+	    op-insert-documents
 	    )
     (import (rnrs)
 	    (mongodb protocol msg-header)
-	    (mongodb protocol op-update))
+	    (mongodb protocol op-update)
+	    (mongodb protocol op-insert))
 
 (define (read-mongodb-message in)
   (let* ((header (read-msg-header in))
 	 (op-code (msg-header-op-code header)))
     (cond ((= op-code *op-code:update*) (read-op-update in header))
+	  ((= op-code *op-code:insert*) (read-op-insert in header))
 	  (else
 	   (assertion-violation 'read-msg-header "Unknown OP code" op-code)))))
 
@@ -64,6 +71,7 @@
   (define header (mongodb-protocol-message-header msg))
   (let-values (((bout extract) (open-bytevector-output-port)))
     (cond ((op-update? msg) (write-op-update bout msg))
+	  ((op-insert? msg) (write-op-insert bout msg))
 	  (else
 	   (assertion-violation 'write-mongodb-message
 				"Unknown protocol message" msg)))

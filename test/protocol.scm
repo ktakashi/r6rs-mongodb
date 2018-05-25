@@ -35,4 +35,22 @@
       (test-assert "write-mongodb-message" (write-mongodb-message out msg))
       (test-equal "compare op-update" op-update-message (extract)))))
 
+(let ()
+  (define op-insert-message
+    (->message #vu8(0 0 0 0
+		    #x61 #x62 #x63 #x00
+		    #x05 #x00 #x00 #x00 #x00
+		    #x05 #x00 #x00 #x00 #x00)
+	       *op-code:insert*))
+  (test-assert (op-insert? (read-mongodb-message (bin op-insert-message))))
+  (let ((msg (read-mongodb-message (bin op-insert-message))))
+    (test-assert (mongodb-protocol-message? msg))
+    (test-assert (msg-header? (mongodb-protocol-message-header msg)))
+    (test-equal "abc" (op-insert-full-collection-name msg))
+    (test-equal '#(() ()) (op-insert-documents msg))
+    
+    (let-values (((out extract) (open-bytevector-output-port)))
+      (test-assert "write-mongodb-message" (write-mongodb-message out msg))
+      (test-equal "compare op-insert" op-insert-message (extract)))))
+
 (test-end)
