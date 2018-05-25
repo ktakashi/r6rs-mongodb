@@ -55,4 +55,42 @@
       (test-assert "write-mongodb-message" (write-mongodb-message out msg))
       (test-equal "compare op-insert" op-insert-message (extract)))))
 
+(let ()
+  (define op-query-message
+    (->message #vu8(0 0 0 0
+		    #x61 #x62 #x63 #x00
+		    0 0 0 0
+		    0 0 0 0
+		    #x05 #x00 #x00 #x00 #x00)
+	       *op-code:query*))
+  (define op-query-message/selector
+    (->message #vu8(0 0 0 0
+		    #x61 #x62 #x63 #x00
+		    0 0 0 0
+		    0 0 0 0
+		    #x05 #x00 #x00 #x00 #x00
+		    #x05 #x00 #x00 #x00 #x00)
+	       *op-code:query*))
+  (define (test-op-query op-query-message has-return?)
+    (test-assert (op-query? (read-mongodb-message (bin op-query-message))))
+    (let ((msg (read-mongodb-message (bin op-query-message))))
+      (test-assert (mongodb-protocol-message? msg))
+      (test-assert (msg-header? (mongodb-protocol-message-header msg)))
+      (test-equal "abc" (mongodb-query-message-full-collection-name msg))
+      (test-equal "flag" 0 (mongodb-flagged-query-message-flags msg))
+      (test-equal "number to skip" 0 (op-query-number-to-skip msg))
+      (test-equal "number to return "0 (op-query-number-to-return msg))
+      (test-equal "query" '() (op-query-query msg))
+      (if has-return?
+	  (test-equal "return fields selector"
+		      '() (op-query-return-fields-selector msg))
+	  (test-equal "return fields selector"
+		      #f (op-query-return-fields-selector msg)))
+      (let-values (((out extract) (open-bytevector-output-port)))
+	(test-assert "write-mongodb-message" (write-mongodb-message out msg))
+	(test-equal "compare op-query" op-query-message (extract)))))
+  (test-op-query op-query-message #f)
+  (test-op-query op-query-message/selector #t))
+  
+
 (test-end)

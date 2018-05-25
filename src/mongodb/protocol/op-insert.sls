@@ -81,8 +81,7 @@
     op-insert)
   (let ((flags (get-u32 in)))
     (let-values (((fsize fcn) (get-cstring in)))
-      (define rest
-	(- (msg-header-message-length header) *msg-header-size* fsize 4))
+      (define rest (- (msg-header-content-length header) fsize 4))
       ;; we need to trace the size of the message here
       (let loop ((rest rest) (doc* '()))
 	(if (zero? rest)

@@ -35,6 +35,7 @@
 	    msg-header-request-id msg-header-request-id-set!
 	    msg-header-response-to msg-header-response-to-set!
 	    msg-header-op-code msg-header-op-code-set!
+	    msg-header-content-length
 
 	    read-msg-header
 	    read-msg-header!
@@ -84,6 +85,8 @@
 	      (case-lambda
 	       (() (p #f #f #f #f))
 	       ((len id to op) (p len id to op))))))
+(define (msg-header-content-length header)
+  (- (msg-header-message-length header) *msg-header-size*))
 
 (define (read-msg-header in)
   (read-msg-header! in (make-msg-header)))

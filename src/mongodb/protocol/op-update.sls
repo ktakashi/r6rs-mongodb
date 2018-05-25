@@ -81,12 +81,12 @@
       (let ((flags (get-u32 in)))
 	(let*-values (((ssize selector) (read-document in))
 		      ((usize update) (read-document in)))
-	  (unless (eqv? (msg-header-message-length header)
-			(+ ssize usize fsize 8 *msg-header-size*))
+	  (unless (eqv? (msg-header-content-length header)
+			(+ ssize usize fsize 8))
 	    (assertion-violation 'read-op-update!
 	     "Invalid size of message"
-	     `(expected ,(msg-header-message-length header))
-	     `(got ,(+ ssize usize fsize 8 *msg-header-size*))))
+	     `(expected ,(msg-header-content-length header))
+	     `(got ,(+ ssize usize fsize 8))))
 	  (unless (zero? zero)
 	    (assertion-violation 'read-op-update!
 				 "Reserved value contains non 0" zero))
