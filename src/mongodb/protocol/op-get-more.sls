@@ -80,7 +80,7 @@
   (let ((zero (get-s32 in)))
     (let-values (((fsize fcn) (get-cstring in)))
       (let* ((nr (get-s32 in))
-	     (cid (get-s32 in)))
+	     (cid (get-s64 in)))
 	(unless (eqv? (msg-header-content-length header) (+ fsize 16))
 	  (assertion-violation 'read-op-get-more!
 			       "Invalid size of message"

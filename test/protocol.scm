@@ -130,4 +130,24 @@
       (test-assert "write-mongodb-message" (write-mongodb-message out msg))
       (test-equal "compare op-delete" op-delete-message (extract)))))
 
+(let ()
+  (define op-kill-cursors-message
+    (->message #vu8(0 0 0 0
+		    2 0 0 0
+		    #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00
+		    #x02 #x00 #x00 #x00 #x00 #x00 #x00 #x00)
+	       *op-code:kill-cursors*))
+  (test-assert (op-kill-cursors?
+		(read-mongodb-message (bin op-kill-cursors-message))))
+  (let ((msg (read-mongodb-message (bin op-kill-cursors-message))))
+    (test-assert (mongodb-protocol-message? msg))
+    (test-assert (msg-header? (mongodb-protocol-message-header msg)))
+    (test-equal 2 (op-kill-cursors-number-of-cursor-ids msg))
+    (test-equal '#(1 2) (op-kill-cursors-cursor-ids msg))
+
+    (let-values (((out extract) (open-bytevector-output-port)))
+      (test-assert "write-mongodb-message" (write-mongodb-message out msg))
+      (test-equal "compare op-kill-cursors"
+		  op-kill-cursors-message (extract)))))
+
 (test-end)
