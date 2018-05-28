@@ -71,6 +71,13 @@
 	    op-kill-cursors? make-op-kill-cursors
 	    op-kill-cursors-number-of-cursor-ids
 	    op-kill-cursors-cursor-ids
+
+	    op-reply?
+	    op-reply-response-flags
+	    op-reply-cursor-id
+	    op-reply-starting-from
+	    op-reply-number-returned
+	    op-reply-documents
 	    )
     (import (rnrs)
 	    (mongodb protocol msg-header)
@@ -79,12 +86,14 @@
 	    (mongodb protocol op-query)
 	    (mongodb protocol op-get-more)
 	    (mongodb protocol op-delete)
-	    (mongodb protocol op-kill-cursors))
+	    (mongodb protocol op-kill-cursors)
+	    (mongodb protocol op-reply))
 
 (define (read-mongodb-message in)
   (let* ((header (read-msg-header in))
 	 (op-code (msg-header-op-code header)))
-    (cond ((= op-code *op-code:update*) (read-op-update in header))
+    (cond ((= op-code *op-code:reply*) (read-op-reply in header))
+	  ((= op-code *op-code:update*) (read-op-update in header))
 	  ((= op-code *op-code:insert*) (read-op-insert in header))
 	  ((= op-code *op-code:query*) (read-op-query in header))
 	  ((= op-code *op-code:get-more*) (read-op-get-more in header))
@@ -103,6 +112,9 @@
 	  ((op-get-more? msg) (write-op-get-more bout msg))
 	  ((op-delete? msg) (write-op-delete bout msg))
 	  ((op-kill-cursors? msg) (write-op-kill-cursors bout msg))
+	  ((op-reply? msg)
+	   (assertion-violation 'write-mongodb-message
+				"No reason to write OP_REPLY" msg))
 	  (else
 	   (assertion-violation 'write-mongodb-message
 				"Unknown protocol message" msg)))

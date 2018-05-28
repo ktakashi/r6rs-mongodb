@@ -150,4 +150,27 @@
       (test-equal "compare op-kill-cursors"
 		  op-kill-cursors-message (extract)))))
 
+(let ()
+  (define op-reply-message
+    (->message #vu8(0 0 0 0
+		    1 0 0 0 0 0 0 0
+		    3 0 0 0
+		    2 0 0 0 ;; 2 records
+		    #x05 #x00 #x00 #x00 #x00
+		    #x05 #x00 #x00 #x00 #x00)
+	       *op-code:reply*))
+  (test-assert (op-reply? (read-mongodb-message (bin op-reply-message))))
+  (let ((msg (read-mongodb-message (bin op-reply-message))))
+    (test-assert (mongodb-protocol-message? msg))
+    (test-assert (msg-header? (mongodb-protocol-message-header msg)))
+    (test-equal 0 (op-reply-response-flags msg))
+    (test-equal 1 (op-reply-cursor-id msg))
+    (test-equal 3 (op-reply-starting-from msg))
+    (test-equal 2 (op-reply-number-returned msg))
+    (test-equal '#(() ()) (op-reply-documents msg))
+
+    (let-values (((out extract) (open-bytevector-output-port)))
+      (test-error "write-mongodb-message" assertion-violation?
+		  (write-mongodb-message out msg)))))
+
 (test-end)
