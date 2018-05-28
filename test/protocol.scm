@@ -111,4 +111,23 @@
       (test-assert "write-mongodb-message" (write-mongodb-message out msg))
       (test-equal "compare op-get" op-get-more-message (extract)))))
 
+(let ()
+  (define op-delete-message
+    (->message #vu8(0 0 0 0
+		    #x61 #x62 #x63 #x00
+		    0 0 0 0
+		    #x05 #x00 #x00 #x00 #x00)
+	       *op-code:delete*))
+  (test-assert (op-delete? (read-mongodb-message (bin op-delete-message))))
+  (let ((msg (read-mongodb-message (bin op-delete-message))))
+    (test-assert (mongodb-protocol-message? msg))
+    (test-assert (msg-header? (mongodb-protocol-message-header msg)))
+    (test-equal "abc" (mongodb-query-message-full-collection-name msg))
+    (test-equal "flags "0 (mongodb-flagged-query-message-flags msg))
+    (test-equal "selector" '() (op-delete-selector msg))
+
+    (let-values (((out extract) (open-bytevector-output-port)))
+      (test-assert "write-mongodb-message" (write-mongodb-message out msg))
+      (test-equal "compare op-delete" op-delete-message (extract)))))
+
 (test-end)

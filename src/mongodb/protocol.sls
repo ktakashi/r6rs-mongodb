@@ -64,13 +64,17 @@
 	    op-get-more? make-op-get-more
 	    op-get-more-number-to-return
 	    op-get-more-cursor-id
+
+	    op-delete? make-op-delete
+	    op-delete-selector
 	    )
     (import (rnrs)
 	    (mongodb protocol msg-header)
 	    (mongodb protocol op-update)
 	    (mongodb protocol op-insert)
 	    (mongodb protocol op-query)
-	    (mongodb protocol op-get-more))
+	    (mongodb protocol op-get-more)
+	    (mongodb protocol op-delete))
 
 (define (read-mongodb-message in)
   (let* ((header (read-msg-header in))
@@ -79,6 +83,7 @@
 	  ((= op-code *op-code:insert*) (read-op-insert in header))
 	  ((= op-code *op-code:query*) (read-op-query in header))
 	  ((= op-code *op-code:get-more*) (read-op-get-more in header))
+	  ((= op-code *op-code:delete*) (read-op-delete in header))
 	  (else
 	   (assertion-violation 'read-msg-header "Unknown OP code" op-code)))))
 
@@ -90,6 +95,7 @@
 	  ((op-insert? msg) (write-op-insert bout msg))
 	  ((op-query? msg) (write-op-query bout msg))
 	  ((op-get-more? msg) (write-op-get-more bout msg))
+	  ((op-delete? msg) (write-op-delete bout msg))
 	  (else
 	   (assertion-violation 'write-mongodb-message
 				"Unknown protocol message" msg)))
