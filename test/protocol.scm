@@ -91,6 +91,24 @@
 	(test-equal "compare op-query" op-query-message (extract)))))
   (test-op-query op-query-message #f)
   (test-op-query op-query-message/selector #t))
-  
+
+(let ()
+  (define op-get-more-message
+    (->message #vu8(0 0 0 0
+		    #x61 #x62 #x63 #x00
+		    #x02 #x00 #x00 #x00
+		    #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00)
+	       *op-code:get-more*))
+  (test-assert (op-get-more? (read-mongodb-message (bin op-get-more-message))))
+  (let ((msg (read-mongodb-message (bin op-get-more-message))))
+    (test-assert (mongodb-protocol-message? msg))
+    (test-assert (msg-header? (mongodb-protocol-message-header msg)))
+    (test-equal "abc" (mongodb-query-message-full-collection-name msg))
+    (test-equal 2 (op-get-more-number-to-return msg))
+    (test-equal 1 (op-get-more-cursor-id msg))
+    
+    (let-values (((out extract) (open-bytevector-output-port)))
+      (test-assert "write-mongodb-message" (write-mongodb-message out msg))
+      (test-equal "compare op-get" op-get-more-message (extract)))))
 
 (test-end)
