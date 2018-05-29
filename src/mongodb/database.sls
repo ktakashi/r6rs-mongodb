@@ -43,6 +43,8 @@
 	    mongodb-query-result-starting-from
 	    mongodb-query-result-documents
 
+	    mongodb-database-get-last-error
+	    
 	    mongodb-database-query
 	    mongodb-database-query/selector
 	    mongodb-database-query-request ;; low level
@@ -204,11 +206,15 @@
     (unless (bitwise-bit-set? flags 0)
       (check-last-error 'mongodb-database-insert-request db))))
 
+
+(define (mongodb-database-get-last-error db)
+  (let ((r (mongodb-database-query-request db "$cmd" 1 1
+					   '(("getLastError" 1))
+					   #f)))
+    (vector-ref (mongodb-query-result-documents r) 0)))
+
 (define (check-last-error who db)
-  (let* ((r (mongodb-database-query-request db "$cmd" 1 1
-					    '(("getLastError" 1))
-					    #f))
-	 (doc (vector-ref (mongodb-query-result-documents r) 0)))
+  (let ((doc (mongodb-database-get-last-error db)))
     (cond ((assoc "err" doc) =>
 	   (lambda (slot)
 	     (unless (eq? 'null (cadr slot))
