@@ -33,6 +33,7 @@
     (export mongodb-connection? make-mongodb-connection
 	    open-mongodb-connection!
 	    close-mongodb-connection!
+	    mongodb-connection-open?
 	    mongodb-connection-input-port
 	    mongodb-connection-output-port
 	    )
@@ -70,6 +71,9 @@
       (mongodb-connection-socket-set! connection #f))
     connection))
 
+(define (mongodb-connection-open? connection)
+  (and (mongodb-connection-socket connection) #t))
+
 (define (mongodb-connection-input-port connection)
   (check-socket-open 'mongodb-connection-input-port connection)
   (socket-input-port (mongodb-connection-socket connection)))
@@ -79,7 +83,7 @@
   (socket-output-port (mongodb-connection-socket connection)))
 
 (define (check-socket-open who con)
-  (unless (mongodb-connection-socket con)
+  (unless (mongodb-connection-open? con)
     (raise (condition (make-mongodb-error)
 		      (make-i/o-error)
 		      (make-who-condition who)

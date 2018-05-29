@@ -44,6 +44,9 @@
 
 	    mongodb-protocol-message mongodb-protocol-message?
 	    mongodb-protocol-message-header
+	    mongodb-protocol-message-request-id
+	    mongodb-protocol-message-request-id-set!
+	    mongodb-protocol-message-response-to
 
 	    mongodb-query-message mongodb-query-message?
 	    mongodb-query-message-full-collection-name
@@ -83,7 +86,7 @@
 	  (mutable op-code))       ;; int32
   (protocol (lambda (p)
 	      (case-lambda
-	       (() (p #f #f #f #f))
+	       (() (p #f #f 0 #f))
 	       ((len id to op) (p len id to op))))))
 (define (msg-header-content-length header)
   (- (msg-header-message-length header) *msg-header-size*))
@@ -111,6 +114,14 @@
 
 (define-record-type mongodb-protocol-message
   (fields header)) ;; MsgHeader
+
+(define (mongodb-protocol-message-request-id message)
+  (msg-header-request-id (mongodb-protocol-message-header message)))
+(define (mongodb-protocol-message-request-id-set! message id)
+  (msg-header-request-id-set!
+   (mongodb-protocol-message-header message) id))
+(define (mongodb-protocol-message-response-to message)
+  (msg-header-response-to (mongodb-protocol-message-header message)))
 
 (define-record-type mongodb-query-message
   (parent mongodb-protocol-message)

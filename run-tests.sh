@@ -7,12 +7,18 @@ declare -A implementations=([sagittarius@0.9.2]='false'
 			    [chez@v9.5]='true')
 
 echo "Preparing for Chez Scheme"
-if [ ! -f test/lib/srfi/:64.sls ]; then
-    ln -s %3a64.sls test/lib/srfi/:64.sls
-fi
-if [ ! -d test/lib/srfi/:64 ]; then
-    ln -s %3a64 test/lib/srfi/:64
-fi
+create_symlink() {
+    flag=$1
+    target=$2
+    src=$3
+    if [ ! ${flag} ${src} ]; then
+	ln -s ${target} ${src}
+    fi
+}
+create_symlink -f %3a64.sls test/lib/srfi/:64.sls
+create_symlink -d %3a64 test/lib/srfi/:64
+create_symlink -f %3a98.sls test/lib/srfi/:98.sls
+create_symlink -d %3a98 test/lib/srfi/:98
 
 gcc -fPIC -shared -O3 src/mongodb/net/tcp/chez.c -o src/mongodb/net/tcp/chez.so
 

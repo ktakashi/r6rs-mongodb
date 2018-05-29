@@ -41,7 +41,10 @@
 
 	    mongodb-protocol-message?
 	    mongodb-protocol-message-header
-
+	    mongodb-protocol-message-request-id
+	    mongodb-protocol-message-request-id-set!
+	    mongodb-protocol-message-response-to
+	    
 	    mongodb-query-message?
 	    mongodb-query-message-full-collection-name
 
