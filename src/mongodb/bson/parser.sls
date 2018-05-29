@@ -63,6 +63,7 @@
     (import (rnrs)
 	    (mongodb util bytevectors)
 	    (mongodb util ports)
+	    (mongodb util uuid)
 	    (mongodb bson conditions)
 	    (mongodb bson validators))
 
@@ -243,7 +244,11 @@
        (raise-bson-read-error 'bson-read "Unexpected EOF"))
     ;; For now just return subtype as it is
     ;; the spec says almost nothing, (e.g. wtf is Function?)
-    (values (+ size 5) `(binary ,subtype ,(read-n-bytevector in size)))))
+    (let ((bv (read-n-bytevector in size)))
+      (values (+ size 5)
+	      (case subtype
+		((4) `(uuid ,(bytevector->uuid-string bv)))
+		(else `(binary ,subtype ,bv)))))))
 
 ;; helpers
 (define-syntax define-helper

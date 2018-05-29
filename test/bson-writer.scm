@@ -102,6 +102,25 @@
 		 #x01 #x02 #x03 #x04)
 	    write-element '("abc" (binary #x00 #vu8(1 2 3 4))))
 
+(test-write "write-uuid-element (1)"
+	    #vu8(#x05
+		 #x61 #x62 #x63 #x00
+		 #x10 #x00 #x00 #x00
+		 #x04
+		 151 145 159 79 69 33 65 4 146
+		 64 119 81 234 199 218 133)
+	    write-uuid-element
+	    '("abc" (uuid "97919f4f-4521-4104-9240-7751eac7da85")))
+(test-write "write-uuid-element (2)"
+	    #vu8(#x05
+		 #x61 #x62 #x63 #x00
+		 #x10 #x00 #x00 #x00
+		 #x04
+		 151 145 159 79 69 33 65 4 146
+		 64 119 81 234 199 218 133)
+	    write-element
+	    '("abc" (uuid "97919f4f-4521-4104-9240-7751eac7da85")))
+
 (test-write "write-undefined-element (1)"
 	    #vu8(#x06 #x61 #x62 #x63 #x00)
 	    write-undefined-element '("abc" undefined))

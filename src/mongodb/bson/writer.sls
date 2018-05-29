@@ -39,6 +39,7 @@
 	    write-embedded-document-element
 	    write-array-element
 	    write-binary-element
+	    write-uuid-element
 	    write-undefined-element
 	    write-object-id-element
 	    write-boolean-element
@@ -62,7 +63,8 @@
 	    (mongodb bson conditions)
 	    (mongodb bson validators)
 	    (mongodb util bytevectors)
-	    (mongodb util ports))
+	    (mongodb util ports)
+	    (mongodb util uuid))
 
 (define (write-document out document)
   (let-values (((bout extract) (open-bytevector-output-port)))
@@ -127,6 +129,12 @@
     (write-int32 out (bytevector-length bin))
     (put-u8 out subtype)
     (put-bytevector out bin)))
+;; TODO don't allocate
+(define (write-uuid-element out element)
+  (let ((key (car element))
+	(value (cadr element)))
+    (write-binary-element out
+     `(,key (binary 4 ,(uuid-string->bytevector (cadr value)))))))
 
 (define (write-undefined-element out element)
   (put-u8 out #x06)
@@ -214,6 +222,7 @@
     (,document? ,write-embedded-document-element)
     (,vector? ,write-array-element)
     (,(type-of? 'binary) ,write-binary-element)
+    (,(type-of? 'uuid) ,write-uuid-element)
     (,(symbol-of? 'undefined) ,write-undefined-element)
     (,(type-of? 'object-id) ,write-object-id-element)
     (,boolean? ,write-boolean-element)
