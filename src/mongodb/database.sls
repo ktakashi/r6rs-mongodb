@@ -45,7 +45,10 @@
 
 	    mongodb-database-query
 	    mongodb-database-query/selector
-	    mongodb-request-query ;; low level
+	    mongodb-database-query-request ;; low level
+	    
+	    mongodb-database-insert
+	    mongodb-database-insert-request ;; low level
 	    )
     (import (rnrs)
 	    (mongodb connection)
@@ -58,9 +61,13 @@
 	  ;; I'm not entirely sure if this should be here or not,
 	  ;; but we can't use SRFI-18 so global location isn't an
 	  ;; option either...
-	  (mutable request-id))
+	  (mutable request-id-strategy))
   (protocol (lambda (p)
-	      (lambda (connection name)
+	      (lambda (connection name . maybe-strategy)
+		(define strategy
+		  (if (null? maybe-strategy)
+		      (default-strategy)
+		      (car maybe-strategy)))
 		(unless (mongodb-connection? connection)
 		  (assertion-violation 'make-mongodb-database
 				       "MongoDB connection is required"
@@ -75,7 +82,17 @@
 		  (assertion-violation 'make-mongodb-database
 				       "Database name must be a string"
 				       name))
-		(p connection name 1)))))
+		(unless (procedure? strategy)
+		  (assertion-violation 'make-mongodb-database
+				       "Request ID strategy must be a procedure"
+				       strategy))
+		(p connection name strategy)))))
+
+(define (default-strategy)
+  (define count 0)
+  (lambda ()
+    (set! count (+ count 1))
+    count))
 
 ;; NB AwaitCapable is always set so we don't handle it
 (define-record-type mongodb-query-result
@@ -103,19 +120,22 @@
 (define (mongodb-database-input-port database)
   (mongodb-connection-input-port (mongodb-database-connection database)))
 (define (mongodb-database-request-id! database)
-  (let ((id (mongodb-database-request-id database)))
-    (mongodb-database-request-id-set! database (+ id 1))
-    id))
+  ((mongodb-database-request-id-strategy database)))
   
 (define (->full-collection-name database collection-names)
-  (if (pair? collection-names)
-      (let-values (((out ext) (open-string-output-port)))
-	(put-string out (mongodb-database-name database))
-	(for-each (lambda (n) (put-char out #\.) (put-string out n))
-		  collection-names)
-	(ext))
-      (string-append (mongodb-database-name database) "." collection-names)))
+  (cond ((pair? collection-names)
+	 (let-values (((out ext) (open-string-output-port)))
+	   (put-string out (mongodb-database-name database))
+	   (for-each (lambda (n) (put-char out #\.) (put-string out n))
+		     collection-names)
+	   (ext)))
+	 ((or (not collection-names) (null? collection-names))
+	  (mongodb-database-name database))
+	 (else
+	  (string-append (mongodb-database-name database)
+			 "." collection-names))))
 
+;; OP_QUERY
 (define (op-reply->database-reply op-reply)
   (unless (op-reply? op-reply)
     (assertion-violation 'op-reply->database-reply "Unexpected object"
@@ -144,7 +164,8 @@
   (define returnn (if (or (null? maybe-options) (null? (cdr maybe-options)))
 		      0
 		      (cadr maybe-options)))
-  (mongodb-request-query database collection-names skipn returnn query #f))
+  (mongodb-database-query-request
+   database collection-names skipn returnn query #f))
 
 (define (mongodb-database-query/selector database
 					 collection-names
@@ -156,9 +177,10 @@
 		      0
 		      (cadr maybe-options)))
   (define rfs (map (lambda (s) (list s 1)) selectors))
-  (mongodb-request-query database collection-names skipn returnn query rfs))
+  (mongodb-database-query-request
+   database collection-names skipn returnn query rfs))
 
-(define (mongodb-request-query database col-names ns nr query rfs)
+(define (mongodb-database-query-request database col-names ns nr query rfs)
   (let ((query (make-op-query (->full-collection-name database col-names)
 			      ns nr query rfs)))
     (mongodb-protocol-message-request-id-set! query
@@ -166,4 +188,33 @@
     (write-mongodb-message (mongodb-database-output-port database) query)
     (op-reply->database-reply
      (read-mongodb-message (mongodb-database-input-port database)))))
+
+
+;; OP_INSERT
+(define (mongodb-database-insert database collection-names documents . options)
+  ;; add ignore error flag
+  (define flags (if (null? options) 0 (and (car options) 1)))
+  (mongodb-database-insert-request database collection-names flags documents))
+
+(define (mongodb-database-insert-request db names flags doc*)
+  (let ((insert (make-op-insert flags (->full-collection-name db names) doc*)))
+    (mongodb-protocol-message-request-id-set! insert
+     (mongodb-database-request-id! db))
+    (write-mongodb-message (mongodb-database-output-port db) insert)
+    (unless (bitwise-bit-set? flags 0)
+      (check-last-error 'mongodb-database-insert-request db))))
+
+(define (check-last-error who db)
+  (let* ((r (mongodb-database-query-request db "$cmd" 1 1
+					    '(("getLastError" 1))
+					    #f))
+	 (doc (vector-ref (mongodb-query-result-documents r) 0)))
+    (cond ((assoc "err" doc) =>
+	   (lambda (slot)
+	     (unless (eq? 'null (cadr slot))
+	       (raise-mongodb-error
+		(make-mongodb-error)
+		(make-who-condition who)
+		(make-message-condition (cadr slot))
+		(make-irritants-condition db))))))))
 )

@@ -64,10 +64,6 @@
 		  (assertion-violation 'make-op-query
 				       "Invalid op-code" header)))
 	      (case-lambda
-	       (()
-		(let ((header (make-msg-header)))
-		  (msg-header-op-code-set! header *op-code:query*)
-		  ((p header #f 0) 0 0 '() #f)))
 	       ((fcn ns nr q rfs)
 		(let ((header (make-msg-header)))
 		  (msg-header-op-code-set! header *op-code:query*)

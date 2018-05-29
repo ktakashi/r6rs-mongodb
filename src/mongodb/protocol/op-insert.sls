@@ -57,16 +57,19 @@
 		(unless (eqv? (msg-header-op-code header) *op-code:insert*)
 		  (assertion-violation 'make-op-insert
 				       "Invalid op-code" header)))
-	      (case-lambda
-	       (()
-		(let ((header (make-msg-header)))
-		  (msg-header-op-code-set! header *op-code:insert*)
-		  ((p header #f 0) '#())))
-	       ((header fl fcn doc*)
-		(check-header header)
+	      (define (check-documents doc*)
 		(unless (vector? doc*)
 		  (assertion-violation 'make-op-insert
-				       "documents must be a vector" doc*))
+				       "documents must be a vector" doc*)))
+	      (case-lambda
+	       ((fl fcn doc*)
+		(check-documents doc*)
+		(let ((header (make-msg-header)))
+		  (msg-header-op-code-set! header *op-code:insert*)
+		  ((p header fcn fl) doc*)))
+	       ((header fl fcn doc*)
+		(check-header header)
+		(check-documents doc*)
 		((p header fcn fl) doc*))))))
 
 (define (read-op-insert in header)
