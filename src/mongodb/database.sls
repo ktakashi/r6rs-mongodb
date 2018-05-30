@@ -44,6 +44,8 @@
 	    mongodb-query-result-documents
 
 	    mongodb-database-get-last-error
+	    mongodb-database-run-command
+	    mongodb-database-admin-command
 	    
 	    mongodb-database-query
 	    mongodb-database-query/selector
@@ -74,10 +76,6 @@
 		  (assertion-violation 'make-mongodb-database
 				       "MongoDB connection is required"
 				       connection))
-		(unless (mongodb-connection-open? connection)
-		  (assertion-violation 'make-mongodb-database
-				       "MongoDB connection must be opened"
-				       connection))
 		;; TODO should we check the format?
 		;; (e.g. not containing '.')
 		(unless (string? name)
@@ -92,7 +90,7 @@
 
 (define (default-strategy)
   (define count 0)
-  (lambda ()
+  (lambda (database)
     (set! count (+ count 1))
     count))
 
@@ -122,8 +120,8 @@
 (define (mongodb-database-input-port database)
   (mongodb-connection-input-port (mongodb-database-connection database)))
 (define (mongodb-database-request-id! database)
-  ((mongodb-database-request-id-strategy database)))
-  
+  ((mongodb-database-request-id-strategy database) database))
+
 (define (->full-collection-name database collection-names)
   (cond ((pair? collection-names)
 	 (let-values (((out ext) (open-string-output-port)))
@@ -183,6 +181,7 @@
    database collection-names skipn returnn query rfs))
 
 (define (mongodb-database-query-request database col-names ns nr query rfs)
+  (check-connection-open 'mongodb-database-query-request database)
   (let ((query (make-op-query (->full-collection-name database col-names)
 			      ns nr query rfs)))
     (mongodb-protocol-message-request-id-set! query
@@ -199,6 +198,7 @@
   (mongodb-database-insert-request database collection-names flags documents))
 
 (define (mongodb-database-insert-request db names flags doc*)
+  (check-connection-open 'mongodb-database-insert-request db)
   (let ((insert (make-op-insert flags (->full-collection-name db names) doc*)))
     (mongodb-protocol-message-request-id-set! insert
      (mongodb-database-request-id! db))
@@ -207,11 +207,20 @@
       (check-last-error 'mongodb-database-insert-request db))))
 
 
-(define (mongodb-database-get-last-error db)
+(define (mongodb-database-run-command db command)
+  (define (ensure-bson command)
+    (if (string? command)
+	`((,command 1))
+	command))
   (let ((r (mongodb-database-query-request db "$cmd" 1 1
-					   '(("getLastError" 1))
-					   #f)))
+					   (ensure-bson command) #f)))
     (vector-ref (mongodb-query-result-documents r) 0)))
+
+(define (mongodb-database-get-last-error db)
+  (mongodb-database-run-command db "getLastError"))
+
+(define (mongodb-database-admin-command db command)
+  (mongodb-connection-run-command (mongodb-database-connection db) command))
 
 (define (check-last-error who db)
   (let ((doc (mongodb-database-get-last-error db)))
@@ -219,8 +228,13 @@
 	   (lambda (slot)
 	     (unless (eq? 'null (cadr slot))
 	       (raise-mongodb-error
-		(make-mongodb-error)
-		(make-who-condition who)
-		(make-message-condition (cadr slot))
-		(make-irritants-condition db))))))))
+		(make-mongodb-error) who (cadr slot) db)))))))
+
+(define (check-connection-open who db)
+  (unless (mongodb-connection-open? (mongodb-database-connection db))
+    (raise-mongodb-error (make-mongodb-connection-closed)
+			 who
+			 "MongoDB connection must be opened"
+			 db)))
+
 )

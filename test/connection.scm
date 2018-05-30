@@ -16,6 +16,7 @@
     (test-assert (mongodb-connection-open? conn))
     (test-assert (input-port? (mongodb-connection-input-port conn)))
     (test-assert (output-port? (mongodb-connection-output-port conn)))
+    (test-assert (assoc "databases" (mongodb-connection-list-databases conn)))
     (test-assert (mongodb-connection? (close-mongodb-connection! conn)))))
 
 (let ((conn (make-mongodb-connection "localhost")))

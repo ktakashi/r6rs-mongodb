@@ -36,16 +36,28 @@
 	    mongodb-connection-open?
 	    mongodb-connection-input-port
 	    mongodb-connection-output-port
+
+	    mongodb-connection-run-command
+	    mongodb-connection-list-databases
+	    
+
+	    &mongodb-connection
+	    mongodb-connection-error? make-mongodb-connection-error
+	    &mongodb-connection-closed make-mongodb-connection-closed
+	    mongodb-connection-closed?
 	    )
     (import (rnrs)
 	    (mongodb conditions)
 	    (mongodb net socket)
-	    (mongodb net tcp))
+	    (mongodb net tcp)
+	    (mongodb protocol))
 
 (define-record-type mongodb-connection
   (fields host
 	  port
-	  (mutable socket))
+	  (mutable socket)
+	  ;; per connection should be fine right?
+	  (mutable request-id))
   (protocol (lambda (p)
 	      (lambda (host . maybe-port)
 		;; default port is 27017
@@ -56,7 +68,20 @@
 		(unless (and (fixnum? port) (positive? port))
 		  (assertion-violation 'make-mongodb-connection
 				       "Port must be positive fixnum" port))
-		(p host (number->string port) #f)))))
+		(p host (number->string port) #f 1)))))
+
+(define-condition-type &mongodb-connection &mongodb
+  make-mongodb-connection-error mongodb-connection-error?)
+(define-condition-type &mongodb-connection-closed &mongodb-connection
+  %make-mongodb-connection-closed mongodb-connection-closed?)
+(define (make-mongodb-connection-closed)
+  (condition (%make-mongodb-connection-closed)
+	     (make-i/o-error)))
+
+(define (mongodb-connection-request-id! conn)
+  (let ((id (mongodb-connection-request-id conn)))
+    (mongodb-connection-request-id-set! conn (+ id 1))
+    id))
 
 (define (open-mongodb-connection! connection)
   (let ((socket (tcp-connect (mongodb-connection-host connection)
@@ -82,10 +107,26 @@
   (check-socket-open 'mongodb-connection-output-port connection)
   (socket-output-port (mongodb-connection-socket connection)))
 
+(define (mongodb-connection-run-command conn command)
+  (define (->bson command)
+    (if (string? command)
+	`((,command 1))
+	command))
+  (check-socket-open 'mongodb-connection-run-command conn)
+  (let ((q (make-op-query "admin.$cmd" 1 1 (->bson command) #f))
+	(sock (mongodb-connection-socket conn)))
+    (mongodb-protocol-message-request-id-set! q
+     (mongodb-connection-request-id! conn))
+    (write-mongodb-message (socket-output-port sock) q)
+    (let ((op-reply (read-mongodb-message (socket-input-port sock))))
+      (vector-ref (op-reply-documents op-reply) 0))))
+
+(define (mongodb-connection-list-databases conn)
+  (mongodb-connection-run-command conn "listDatabases"))
+
 (define (check-socket-open who con)
   (unless (mongodb-connection-open? con)
-    (raise (condition (make-mongodb-error)
-		      (make-i/o-error)
+    (raise (condition (make-mongodb-connection-closed)
 		      (make-who-condition who)
 		      (make-message-condition "Connection is not open")
 		      (make-irritants-condition con)))))

@@ -109,7 +109,7 @@
 (define (read-double-element in)
   (let-values (((size name) (read-cstring in)))
     (let ((d (read-f64 in)))
-      (values (+ size 8) (list name d)))))
+      (values (+ size 8) (list name (if (integer? d) (exact d) d))))))
 
 (define (read-string-element in)
   (let*-values (((esize name) (read-cstring in))

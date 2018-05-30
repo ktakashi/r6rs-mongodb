@@ -66,6 +66,12 @@
 			#vu8(#x01
 			     #x61 #x62 #x63 #x00
 			     #x1f #x85 #xeb #x51 #xb8 #x1e #x09 #x40)))
+(test-values "read-double-element (3)"
+	     (13 '("abc" 1))
+	     (read-bson read-element
+			#vu8(#x01
+			     #x61 #x62 #x63 #x00
+			     #x00 #x00 #x00 #x00 #x00 #x00 #xf0 #x3f)))
 
 (test-values "read-string-element (1)"
 	     (12 '("abc" "abc"))
