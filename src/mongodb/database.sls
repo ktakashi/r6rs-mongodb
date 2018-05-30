@@ -68,17 +68,9 @@
 
 (define-record-type mongodb-database
   (fields connection
-	  name
-	  ;; I'm not entirely sure if this should be here or not,
-	  ;; but we can't use SRFI-18 so global location isn't an
-	  ;; option either...
-	  (mutable request-id-strategy))
+	  name)
   (protocol (lambda (p)
-	      (lambda (connection name . maybe-strategy)
-		(define strategy
-		  (if (null? maybe-strategy)
-		      (default-strategy)
-		      (car maybe-strategy)))
+	      (lambda (connection name)
 		(unless (mongodb-connection? connection)
 		  (assertion-violation 'make-mongodb-database
 				       "MongoDB connection is required"
@@ -89,17 +81,7 @@
 		  (assertion-violation 'make-mongodb-database
 				       "Database name must be a string"
 				       name))
-		(unless (procedure? strategy)
-		  (assertion-violation 'make-mongodb-database
-				       "Request ID strategy must be a procedure"
-				       strategy))
-		(p connection name strategy)))))
-
-(define (default-strategy)
-  (define count 0)
-  (lambda (database)
-    (set! count (+ count 1))
-    count))
+		(p connection name)))))
 
 ;; NB AwaitCapable is always set so we don't handle it
 (define-record-type mongodb-query-result
@@ -127,7 +109,8 @@
 (define (mongodb-database-input-port database)
   (mongodb-connection-input-port (mongodb-database-connection database)))
 (define (mongodb-database-request-id! database)
-  ((mongodb-database-request-id-strategy database) database))
+  (let ((c (mongodb-database-connection database)))
+    ((mongodb-connection-request-id-strategy c) c database)))
 
 (define (->full-collection-name database collection-names)
   (cond ((pair? collection-names)

@@ -45,6 +45,8 @@
 	    mongodb-connection-error? make-mongodb-connection-error
 	    &mongodb-connection-closed make-mongodb-connection-closed
 	    mongodb-connection-closed?
+
+	    mongodb-connection-request-id-strategy ;; internal only
 	    )
     (import (rnrs)
 	    (mongodb conditions)
@@ -57,18 +59,34 @@
 	  port
 	  (mutable socket)
 	  ;; per connection should be fine right?
-	  (mutable request-id))
+	  (mutable request-id-strategy))
   (protocol (lambda (p)
 	      (lambda (host . maybe-port)
 		;; default port is 27017
 		(define port (if (null? maybe-port) 27017 (car maybe-port)))
+		(define strategy
+		  (if (or (null? maybe-port)
+			  (null? (cdr maybe-port))
+			  (not (cadr maybe-port)))
+		      (default-strategy)
+		      (cadr maybe-port)))
 		(unless (string? host)
 		  (assertion-violation 'make-mongodb-connection
 				       "Host must be a string" host))
 		(unless (and (fixnum? port) (positive? port))
 		  (assertion-violation 'make-mongodb-connection
 				       "Port must be positive fixnum" port))
-		(p host (number->string port) #f 1)))))
+		(unless (procedure? strategy)
+		  (assertion-violation 'make-mongodb-connection
+				       "Request ID strategy must be a procedure"
+				       strategy))
+		(p host (number->string port) #f strategy)))))
+
+(define (default-strategy)
+  (define count 0)
+  (lambda (conn maybe-database)
+    (set! count (+ count 1))
+    count))
 
 (define-condition-type &mongodb-connection &mongodb
   make-mongodb-connection-error mongodb-connection-error?)
@@ -79,9 +97,7 @@
 	     (make-i/o-error)))
 
 (define (mongodb-connection-request-id! conn)
-  (let ((id (mongodb-connection-request-id conn)))
-    (mongodb-connection-request-id-set! conn (+ id 1))
-    id))
+  ((mongodb-connection-request-id-strategy conn) conn #f))
 
 (define (open-mongodb-connection! connection)
   (let ((socket (tcp-connect (mongodb-connection-host connection)

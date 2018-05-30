@@ -9,9 +9,16 @@
 
 (test-assert (mongodb-connection? (make-mongodb-connection "localhost")))
 (test-assert (mongodb-connection? (make-mongodb-connection "localhost" 27017)))
+(test-assert (mongodb-connection?
+	      (make-mongodb-connection "localhost" 27017 #f)))
+(test-error assertion-violation?
+	    (mongodb-connection?
+	     (make-mongodb-connection "localhost" 27017 1)))
 
+(define (strategy conn database?) 1)
+  
 (when (get-environment-variable "MONGODB_RUNNING")
-  (let ((conn (make-mongodb-connection "localhost")))
+  (let ((conn (make-mongodb-connection "localhost" 27017 strategy)))
     (test-assert (mongodb-connection? (open-mongodb-connection! conn)))
     (test-assert (mongodb-connection-open? conn))
     (test-assert (input-port? (mongodb-connection-input-port conn)))
