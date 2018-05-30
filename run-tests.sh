@@ -1,8 +1,8 @@
 #!/bin/bash
 
-declare -A implementations=([sagittarius@0.9.2]='false'
-			    [larceny@1.3]='false'
-			    [chez@v9.5]='true')
+declare -a implementations=(sagittarius@0.9.2
+			    larceny@1.3
+			    chez@v9.5)
 
 echo "Preparing for Chez Scheme"
 create_symlink() {
@@ -13,9 +13,9 @@ create_symlink() {
 	ln -s ${target} ${src}
     fi
 }
-create_symlink -f %3a64.sls test/lib/srfi/:64.sls
+create_symlink -f %3a64.chezscheme.sls test/lib/srfi/:64.sls
 create_symlink -d %3a64 test/lib/srfi/:64
-create_symlink -f %3a98.sls test/lib/srfi/:98.sls
+create_symlink -f %3a98.chezscheme.sls test/lib/srfi/:98.sls
 create_symlink -d %3a98 test/lib/srfi/:98
 
 gcc -fPIC -shared -O3 src/mongodb/net/tcp/chez.c -o src/mongodb/net/tcp/chez.so
@@ -43,14 +43,12 @@ check_output() {
 
 EXIT_STATUS=0
 
-for impl in ${!implementations[@]}; do
+for impl in ${implementations[@]}; do
     echo Testing with ${impl}
-    case ${implementations[$impl]} in
-	true) testpath="--loadpath test/lib" ;;
-    esac
     for file in test/*.scm; do
 	scheme-env run ${impl} \
 		   --loadpath src $testpath \
+		   --loadpath test/lib \
 		   --standard r6rs --program ${file} | check_output
 	case ${EXIT_STATUS} in
 	    0) EXIT_STATUS=$? ;;
