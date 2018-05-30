@@ -69,6 +69,12 @@
 	    mongodb-database-delete-all
 	    mongodb-database-delete-request ;; low level
 	    mongodb-database-delete-command
+
+	    ;; these are exposed so that we may implement
+	    ;; async or queued call in the future
+	    mongodb-database-receive-reply ;; low level
+	    mongodb-database-send-query	   ;; low level
+	    mongodb-database-send-get-more ;; low level
 	    )
     (import (rnrs)
 	    (mongodb connection)
@@ -182,31 +188,49 @@
    database collection-names skipn returnn query rfs))
 
 (define (send-message database msg)
-  (mongodb-protocol-message-request-id-set! msg
-   (mongodb-database-request-id! database))
-  (write-mongodb-message (mongodb-database-output-port database) msg))
+  (let ((request-id (mongodb-database-request-id! database)))
+    (mongodb-protocol-message-request-id-set! msg request-id)
+    (write-mongodb-message (mongodb-database-output-port database) msg)
+    request-id))
 (define (receive-reply database fcn)
   (op-reply->database-reply
    (read-mongodb-message (mongodb-database-input-port database))
    fcn))
 
+(define (mongodb-database-receive-reply database)
+  (check-connection-open 'mongodb-database-receive-reply database)
+  ;; if this is called, then it should be async/queued request/response
+  ;; style, so we don't care the book keeping atm.
+  (receive-reply database #f))
+
 (define (mongodb-database-query-request database col-names ns nr query rfs)
-  (check-connection-open 'mongodb-database-query-request database)
-  (let* ((fcn (->full-collection-name database col-names))
-	 (query (make-op-query fcn ns nr query rfs)))
-    (send-message database query)
+  (let ((fcn (->full-collection-name database col-names)))
+    (mongodb-database-send-query database fcn ns nr query rfs)
     (receive-reply database fcn)))
 
+(define (mongodb-database-send-query database fcn ns nr query rfs)
+  (check-connection-open 'mongodb-database-query-request database)
+  (let ((query (make-op-query fcn ns nr query rfs)))
+    (send-message database query)))
+  
 ;; returns #f or query-result
 (define (mongodb-database-get-more database query . opt)
   (define nr (if (null? opt) 0 (car opt)))
+  (mongodb-database-send-get-more database query nr)
+  (let ((fcn (mongodb-query-result-full-collection-name query)))
+    (receive-reply database fcn)))
+
+(define (mongodb-database-send-get-more database query nr)
   (define cid (mongodb-query-result-cursor-id query))
   (check-connection-open 'mongodb-database-get-more database)
   (and (not (zero? cid))
        (let* ((fcn (mongodb-query-result-full-collection-name query))
-	      (get-more (make-op-get-more fcn nr cid)))
-	 (send-message database get-more)
-	 (receive-reply database fcn))))
+	      (get-more (make-op-get-more fcn nr cid))
+	      (to (mongodb-query-result-to query))
+	      (out (mongodb-database-output-port database)))
+	 (mongodb-protocol-message-request-id-set! get-more to)
+	 (write-mongodb-message out get-more)
+	 to)))
 
 (define (mongodb-database-kill-cursors database . query*)
   (check-connection-open 'mongodb-database-kill-cursors database)
