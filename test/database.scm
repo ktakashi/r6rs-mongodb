@@ -26,9 +26,10 @@
    (map (lambda (s) (remp (lambda (s) (string=? "_id" (car s))) s))
 	(vector->list vec))))
 
+(define conn (make-mongodb-connection "localhost"))
 (when (get-environment-variable "MONGODB_RUNNING")
-  (let* ((conn (open-mongodb-connection! (make-mongodb-connection "localhost")))
-	 (db (make-mongodb-database conn "test"))
+  (open-mongodb-connection! conn)
+  (let ((db (make-mongodb-database conn "test"))
 	 (collection "testCollection"))
     (test-assert (mongodb-database? db))
     (test-equal '(("ok" 1)) (mongodb-database-run-command db '(("ping" 1))))
@@ -56,18 +57,16 @@
 		(vector-length
 		 (mongodb-query-result-documents
 		  (mongodb-database-query db collection '(("name" "name1"))))))
-    (test-equal "7 documents are queried"
-		7
-		(vector-length
-		 (mongodb-query-result-documents
-		  (mongodb-database-query db collection '(("name" "name1"))
-					  3))))
-    (test-equal "4 documents are queried"
-		4
-		(vector-length
-		 (mongodb-query-result-documents
-		  (mongodb-database-query db collection '(("name" "name1"))
-					  3 4))))
+    (let ((r1 (mongodb-database-query db collection '(("name" "name1")) 3))
+	  (r2 (mongodb-database-query db collection '(("name" "name1")) 3 4)))
+      (test-equal "7 documents are queried"
+		  7 (vector-length (mongodb-query-result-documents r1)))
+      (test-equal "4 documents are queried"
+		  4 (vector-length (mongodb-query-result-documents r2)))
+      (test-assert (mongodb-database-kill-cursors db
+		    (mongodb-query-result-cursor-id r1)
+		    (mongodb-query-result-cursor-id r2))))
+						  
     ;; TODO cursor tests
     (let* ((r (mongodb-database-query db collection '(("name" "name1")) 0 3))
 	   (cid (mongodb-query-result-cursor-id r)))
@@ -128,18 +127,16 @@
 		(vector-length
 		 (mongodb-query-result-documents
 		  (mongodb-database-query db collection '(("name" "name1"))))))
-    (test-assert (mongodb-database-delete-all db collection '(("name" "name1"))))
+    (test-assert (mongodb-database-delete-all db collection
+					      '(("name" "name1"))))
     (test-equal "all records are removed"
 		0
 		(vector-length
 		 (mongodb-query-result-documents
-		  (mongodb-database-query db collection '(("name" "name1"))))))
-    
-    (close-mongodb-connection! conn))
+		  (mongodb-database-query db collection '(("name" "name1")))))))
 
-  (let* ((conn (open-mongodb-connection! (make-mongodb-connection "localhost")))
-	 (db (make-mongodb-database conn "test"))
-	 (collection "testCommandCollection"))
+  (let ((db (make-mongodb-database conn "test"))
+	(collection "testCommandCollection"))
     (test-assert (mongodb-database-drop-collection db collection))
     (test-equal "Insert using command 1"
 		'(("n" (s32 1)) ("ok" 1))
@@ -202,9 +199,8 @@
       (test-equal "delete command not ordered (n)"
 		  '(s32 2) (cond ((assoc "n" r) => cadr)))
       (test-assert "delete command not ordered (writeErrors)"
-		   (assoc "writeErrors" r)))
-    
-    (close-mongodb-connection! conn)))
+		   (assoc "writeErrors" r))))
+  (close-mongodb-connection! conn))
 
 (test-end)
 

@@ -47,7 +47,7 @@
 (define-record-type op-kill-cursors
   (parent mongodb-protocol-message)
   (fields zero		 ;; int32
-	  (mutable number-of-cursor-ids) ;; int32
+	  ;; (mutable number-of-cursor-ids) ;; int32
 	  (mutable cursor-ids)		 ;; int64*
 	  )
   (protocol (lambda (p)
@@ -59,25 +59,29 @@
 			      *op-code:kill-cursors*)
 		  (assertion-violation 'make-op-kill-cursors
 				       "Invalid op-code" header)))
-	      (case-lambda
-	       (()
-		(let ((header (make-msg-header)))
-		  (msg-header-op-code-set! header *op-code:kill-cursors*)
-		  ((p header) 0 0 '#())))
-	       ((header zero n id*)
-		(check-header header)
+	      (define (check-id* id*)
 		(unless (vector? id*)
 		  (assertion-violation 'make-op-kill-cursors
-				       "cursor-ids must be a vector" id*))
-		((p header) zero n id*))))))
+				       "cursor-ids must be a vector" id*)))
+	      (case-lambda
+	       ((id*)
+		(check-id* id*)
+		(let ((header (make-msg-header)))
+		  (msg-header-op-code-set! header *op-code:kill-cursors*)
+		  ((p header) 0 id*)))
+	       ((header zero id*)
+		(check-header header)
+		(check-id* id*)
+		((p header) zero id*))))))
+(define (op-kill-cursors-number-of-cursor-ids op-kill-cursors)
+  (vector-length (op-kill-cursors-cursor-ids op-kill-cursors)))
 
 (define (read-op-kill-cursors in header)
-  (read-op-kill-cursors! in (make-op-kill-cursors header 0 0 '#())))
+  (read-op-kill-cursors! in (make-op-kill-cursors header 0 '#())))
 
 (define (read-op-kill-cursors! in op-kill-cursors)
   (define header (mongodb-protocol-message-header op-kill-cursors))
   (define (finish op-kill-cursors zero n id*)
-    (op-kill-cursors-number-of-cursor-ids-set! op-kill-cursors n)
     (op-kill-cursors-cursor-ids-set! op-kill-cursors id*)
     op-kill-cursors)
   (let ((zero (get-u32 in)))
@@ -93,9 +97,9 @@
 ;; this doesn't emit header
 ;; so must be called after header is written
 (define (write-op-kill-cursors out op-kill-cursors)
+  (define id* (op-kill-cursors-cursor-ids op-kill-cursors))
   (put-s32 out 0)
-  (put-u32 out (op-kill-cursors-number-of-cursor-ids op-kill-cursors))
-  (vector-for-each (lambda (id) (put-s64 out id))
-		   (op-kill-cursors-cursor-ids op-kill-cursors)))
+  (put-u32 out (vector-length id*))
+  (vector-for-each (lambda (id) (put-s64 out id)) id*))
 	   
 )

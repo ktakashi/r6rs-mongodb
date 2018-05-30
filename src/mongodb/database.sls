@@ -53,6 +53,7 @@
 	    mongodb-database-query-request ;; low level
 
 	    mongodb-database-get-more
+	    mongodb-database-kill-cursors
 	    
 	    mongodb-database-insert
 	    mongodb-database-insert-request ;; low level
@@ -201,6 +202,10 @@
 	      (get-more (make-op-get-more fcn nr cid)))
 	 (send-message database get-more)
 	 (receive-reply database))))
+
+(define (mongodb-database-kill-cursors database . cid*)
+  (let ((kill (make-op-kill-cursors (list->vector (filter positive? cid*)))))
+    (send-message database kill)))
 
 ;; OP_INSERT
 (define (mongodb-database-insert database collection-names documents . options)
