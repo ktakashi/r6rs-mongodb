@@ -42,6 +42,8 @@
 	    mongodb-query-result-cursor-id
 	    mongodb-query-result-starting-from
 	    mongodb-query-result-documents
+	    mongodb-query-result-full-collection-name ;; for developers
+	    mongodb-query-result-full-collection-name-set! ;; for developers
 
 	    mongodb-database-get-last-error
 	    mongodb-database-run-command
@@ -105,7 +107,7 @@
 	  cursor-id	;; for next query
 	  starting-from ;; for cursor
 	  documents	;; documents
-	  full-collection-name
+	  (mutable full-collection-name) ;; for book keeping
 	  ))
 
 (define-condition-type &mogodb-invalid-cursor &mongodb
@@ -216,9 +218,9 @@
 ;; returns #f or query-result
 (define (mongodb-database-get-more database query . opt)
   (define nr (if (null? opt) 0 (car opt)))
-  (mongodb-database-send-get-more database query nr)
-  (let ((fcn (mongodb-query-result-full-collection-name query)))
-    (receive-reply database fcn)))
+  (and (mongodb-database-send-get-more database query nr)
+       (let ((fcn (mongodb-query-result-full-collection-name query)))
+	 (receive-reply database fcn))))
 
 (define (mongodb-database-send-get-more database query nr)
   (define cid (mongodb-query-result-cursor-id query))
