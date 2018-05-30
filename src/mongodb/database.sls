@@ -54,7 +54,7 @@
 	    mongodb-database-query/selector
 	    mongodb-database-query-request ;; low level
 
-	    mongodb-database-get-more
+	    mongodb-database-query-get-more
 	    mongodb-database-kill-cursors
 	    
 	    mongodb-database-insert
@@ -107,6 +107,7 @@
 	  cursor-id	;; for next query
 	  starting-from ;; for cursor
 	  documents	;; documents
+	  database	;; database
 	  (mutable full-collection-name) ;; for book keeping
 	  ))
 
@@ -144,7 +145,7 @@
 			 "." collection-names))))
 
 ;; OP_QUERY
-(define (op-reply->database-reply op-reply fcn)
+(define (op-reply->database-reply op-reply database fcn)
   (unless (op-reply? op-reply)
     (assertion-violation 'op-reply->database-reply "Unexpected object"
 			 op-reply))
@@ -166,6 +167,7 @@
      (op-reply-cursor-id op-reply)
      (op-reply-starting-from op-reply)
      (op-reply-documents op-reply)
+     database
      fcn)))
 
 (define (mongodb-database-query database collection-names query . maybe-options)
@@ -197,7 +199,7 @@
 (define (receive-reply database fcn)
   (op-reply->database-reply
    (read-mongodb-message (mongodb-database-input-port database))
-   fcn))
+   database fcn))
 
 (define (mongodb-database-receive-reply database)
   (check-connection-open 'mongodb-database-receive-reply database)
@@ -216,14 +218,16 @@
     (send-message database query)))
   
 ;; returns #f or query-result
-(define (mongodb-database-get-more database query . opt)
+(define (mongodb-database-query-get-more query . opt)
   (define nr (if (null? opt) 0 (car opt)))
-  (and (mongodb-database-send-get-more database query nr)
-       (let ((fcn (mongodb-query-result-full-collection-name query)))
+  (and (mongodb-database-send-get-more query nr)
+       (let ((fcn (mongodb-query-result-full-collection-name query))
+	     (database (mongodb-query-result-database query)))
 	 (receive-reply database fcn))))
 
-(define (mongodb-database-send-get-more database query nr)
+(define (mongodb-database-send-get-more query nr)
   (define cid (mongodb-query-result-cursor-id query))
+  (define database (mongodb-query-result-database query))
   (check-connection-open 'mongodb-database-get-more database)
   (and (not (zero? cid))
        (let* ((fcn (mongodb-query-result-full-collection-name query))
