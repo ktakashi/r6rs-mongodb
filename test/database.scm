@@ -63,26 +63,21 @@
 		  7 (vector-length (mongodb-query-result-documents r1)))
       (test-equal "4 documents are queried"
 		  4 (vector-length (mongodb-query-result-documents r2)))
-      (test-assert (mongodb-database-kill-cursors db
-		    (mongodb-query-result-cursor-id r1)
-		    (mongodb-query-result-cursor-id r2))))
+      (test-assert (mongodb-database-kill-cursors db r1 r2)))
 						  
     ;; TODO cursor tests
-    (let* ((r (mongodb-database-query db collection '(("name" "name1")) 0 3))
-	   (cid (mongodb-query-result-cursor-id r)))
-      (test-assert "cursor id 0"
-		   (not (mongodb-database-get-more db collection 0)))
+    (let* ((r (mongodb-database-query db collection '(("name" "name1")) 0 3)))
       (test-equal "get more 1"
 		  4
 		  (vector-length
 		   (mongodb-query-result-documents
-		    (mongodb-database-get-more db collection cid 4))))
+		    (mongodb-database-get-more db r 4))))
       ;; default should be bigger than 3...
       (test-equal "get more 2"
 		  3
 		  (vector-length
 		   (mongodb-query-result-documents
-		    (mongodb-database-get-more db collection cid)))))
+		    (mongodb-database-get-more db r)))))
     
     (test-assert "update 1"
 		 (mongodb-database-update db collection

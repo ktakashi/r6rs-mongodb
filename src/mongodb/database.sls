@@ -99,6 +99,7 @@
 	  cursor-id	;; for next query
 	  starting-from ;; for cursor
 	  documents	;; documents
+	  full-collection-name
 	  ))
 
 (define-condition-type &mogodb-invalid-cursor &mongodb
@@ -135,7 +136,7 @@
 			 "." collection-names))))
 
 ;; OP_QUERY
-(define (op-reply->database-reply op-reply)
+(define (op-reply->database-reply op-reply fcn)
   (unless (op-reply? op-reply)
     (assertion-violation 'op-reply->database-reply "Unexpected object"
 			 op-reply))
@@ -156,7 +157,8 @@
      (mongodb-protocol-message-response-to op-reply)
      (op-reply-cursor-id op-reply)
      (op-reply-starting-from op-reply)
-     (op-reply-documents op-reply))))
+     (op-reply-documents op-reply)
+     fcn)))
 
 (define (mongodb-database-query database collection-names query . maybe-options)
   (define skipn (if (null? maybe-options) 0 (car maybe-options)))
@@ -183,28 +185,33 @@
   (mongodb-protocol-message-request-id-set! msg
    (mongodb-database-request-id! database))
   (write-mongodb-message (mongodb-database-output-port database) msg))
-(define (receive-reply database)
+(define (receive-reply database fcn)
   (op-reply->database-reply
-   (read-mongodb-message (mongodb-database-input-port database))))
+   (read-mongodb-message (mongodb-database-input-port database))
+   fcn))
 
 (define (mongodb-database-query-request database col-names ns nr query rfs)
   (check-connection-open 'mongodb-database-query-request database)
   (let* ((fcn (->full-collection-name database col-names))
 	 (query (make-op-query fcn ns nr query rfs)))
     (send-message database query)
-    (receive-reply database)))
+    (receive-reply database fcn)))
 
 ;; returns #f or query-result
-(define (mongodb-database-get-more database collection-names cid . opt)
+(define (mongodb-database-get-more database query . opt)
   (define nr (if (null? opt) 0 (car opt)))
+  (define cid (mongodb-query-result-cursor-id query))
   (and (not (zero? cid))
-       (let* ((fcn (->full-collection-name database collection-names))
+       (let* ((fcn (mongodb-query-result-full-collection-name query))
 	      (get-more (make-op-get-more fcn nr cid)))
 	 (send-message database get-more)
-	 (receive-reply database))))
+	 (receive-reply database fcn))))
 
-(define (mongodb-database-kill-cursors database . cid*)
-  (let ((kill (make-op-kill-cursors (list->vector (filter positive? cid*)))))
+(define (mongodb-database-kill-cursors database . query*)
+  (let ((kill (make-op-kill-cursors
+	       (list->vector
+		(filter positive?
+			(map mongodb-query-result-cursor-id query*))))))
     (send-message database kill)))
 
 ;; OP_INSERT
