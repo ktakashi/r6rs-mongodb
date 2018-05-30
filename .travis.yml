@@ -7,6 +7,7 @@ branches:
 services: mongodb
 addons:
   apt:
+    update: true
     packages:
       - cmake
       - gcc
@@ -29,4 +30,4 @@ install:
   - scheme-env install larceny@1.3
 
 script:
-  - run-test.sh
+  - ./run-test.sh
