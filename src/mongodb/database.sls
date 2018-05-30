@@ -210,8 +210,6 @@
 		 (cons (symbol->string (car p)) (cdr p))
 		 p)) opts)))
 ;; insert command
-;; FIXME it's rather weird API and users need to know the specification of
-;; insert command. (e.g. writerConcern)
 (define (mongodb-database-insert-command database collection documents . opts)
   (mongodb-database-run-command database
    `(("insert" ,collection)
@@ -235,8 +233,6 @@
     (check-last-error 'mongodb-database-update-request db)))
 
 ;; update command
-;; FIXME it's rather weird API and users need to know the specification of
-;; insert command. (e.g. writerConcern)
 (define (mongodb-database-update-command database collection updates . opts)
   (mongodb-database-run-command database
    `(("update" ,collection)
@@ -258,8 +254,6 @@
     (check-last-error 'mongodb-database-delete-request db)))
 
 ;; delete command
-;; FIXME it's rather weird API and users need to know the specification of
-;; insert command. (e.g. writerConcern)
 (define (mongodb-database-delete-command database collection deletes . opts)
   (mongodb-database-run-command database
    `(("delete" ,collection)
