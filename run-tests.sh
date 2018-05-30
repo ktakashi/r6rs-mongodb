@@ -35,7 +35,7 @@ check_output() {
     while IFS= read -r LINE; do
 	echo $LINE
 	case $LINE in
-	    *FAIL*) status=1 ;;
+	    *FAIL*) status=255 ;;
 	esac
     done
     return ${status}

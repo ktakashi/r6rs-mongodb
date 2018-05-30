@@ -7,11 +7,15 @@
 
 (test-begin "Mongodb connection")
 
-(test-assert (mongodb-connection? (make-mongodb-connection "localhost")))
-(test-assert (mongodb-connection? (make-mongodb-connection "localhost" 27017)))
-(test-assert (mongodb-connection?
+(test-assert "make connection 1"
+	     (mongodb-connection? (make-mongodb-connection "localhost")))
+(test-assert "make connection 2"
+	     (mongodb-connection? (make-mongodb-connection "localhost" 27017)))
+(test-assert "make connection 3"
+	     (mongodb-connection?
 	      (make-mongodb-connection "localhost" 27017 #f)))
-(test-error assertion-violation?
+(test-error "make connection 4"
+	    assertion-violation?
 	    (mongodb-connection?
 	     (make-mongodb-connection "localhost" 27017 1)))
 
@@ -19,16 +23,22 @@
   
 (when (get-environment-variable "MONGODB_RUNNING")
   (let ((conn (make-mongodb-connection "localhost" 27017 strategy)))
-    (test-assert (mongodb-connection? (open-mongodb-connection! conn)))
-    (test-assert (mongodb-connection-open? conn))
-    (test-assert (input-port? (mongodb-connection-input-port conn)))
-    (test-assert (output-port? (mongodb-connection-output-port conn)))
-    (test-assert (assoc "databases" (mongodb-connection-list-databases conn)))
-    (test-assert (mongodb-connection? (close-mongodb-connection! conn)))))
+    (test-assert "open" (mongodb-connection? (open-mongodb-connection! conn)))
+    (test-assert "opened?" (mongodb-connection-open? conn))
+    (test-assert "input-port?"
+		 (input-port? (mongodb-connection-input-port conn)))
+    (test-assert "output-port?"
+		 (output-port? (mongodb-connection-output-port conn)))
+    (test-assert "list-databases"
+		 (assoc "databases" (mongodb-connection-list-databases conn)))
+    (test-assert "close"
+		 (mongodb-connection? (close-mongodb-connection! conn)))))
 
 (let ((conn (make-mongodb-connection "localhost")))
-  (test-assert (not (mongodb-connection-open? conn)))
-  (test-error mongodb-error? (mongodb-connection-input-port conn))
-  (test-error mongodb-error? (mongodb-connection-output-port conn)))
+  (test-assert "opened? 2" (not (mongodb-connection-open? conn)))
+  (test-error "input-port 2"
+	      mongodb-error? (mongodb-connection-input-port conn))
+  (test-error "output-port 2"
+	      mongodb-error? (mongodb-connection-output-port conn)))
 
 (test-end)

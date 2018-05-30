@@ -79,7 +79,12 @@
 (define-put put-s32 4 bytevector-s32-set!)
 (define-put put-u64 8 bytevector-u64-set!)
 (define-put put-s64 8 bytevector-s64-set!)
-(define-put put-f64 8 bytevector-ieee-double-set!)
+;; workaround for Larceny
+;; https://github.com/larcenists/larceny/issues/823
+(define (put-f64 out v)
+  (define bv (make-bytevector 8))
+  (bytevector-ieee-double-set! bv 0 (inexact v) (endianness little))
+  (put-bytevector out bv))
 
 ;; return 2 values 
 (define (get-cstring in)
