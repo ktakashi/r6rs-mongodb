@@ -1,0 +1,32 @@
+language: c
+sudo: required
+dist: trusty
+branches:
+  only:
+    - master
+
+addons:
+  apt:
+    packages:
+      - cmake
+      - gcc
+      - g++
+      - make
+      - libgc-dev
+      - zlib1g-dev
+      - libffi-dev
+      - libssl-dev
+      - libncurses5-dev
+      - curl
+
+before_install:
+  - curl https://raw.githubusercontent.com/ktakashi/scheme-env/master/bin/install.sh | bash
+  - export PATH=$PATH:~/.scheme-env/bin
+
+install:
+  - scheme-env install sagittarius@0.9.2
+  - scheme-env install chez@v9.5
+  - scheme-env install larceny@1.3
+
+script:
+  - run-test.sh
