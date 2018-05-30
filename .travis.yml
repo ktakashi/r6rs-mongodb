@@ -30,4 +30,4 @@ install:
   - scheme-env install larceny@1.3
 
 script:
-  - ./run-test.sh
+  - ./run-tests.sh
