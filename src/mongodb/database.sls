@@ -201,6 +201,7 @@
 (define (mongodb-database-get-more database query . opt)
   (define nr (if (null? opt) 0 (car opt)))
   (define cid (mongodb-query-result-cursor-id query))
+  (check-connection-open 'mongodb-database-get-more database)
   (and (not (zero? cid))
        (let* ((fcn (mongodb-query-result-full-collection-name query))
 	      (get-more (make-op-get-more fcn nr cid)))
@@ -208,6 +209,7 @@
 	 (receive-reply database fcn))))
 
 (define (mongodb-database-kill-cursors database . query*)
+  (check-connection-open 'mongodb-database-kill-cursors database)
   (let ((kill (make-op-kill-cursors
 	       (list->vector
 		(filter positive?
