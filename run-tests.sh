@@ -30,6 +30,19 @@ case $? in
     *) 	echo MongoDB is running ... no
 esac
 
+check_output() {
+    local status=0
+    while IFS= read -r LINE; do
+	echo $LINE
+	case $LINE in
+	    *FAIL*) status=1 ;;
+	esac
+    done
+    return ${status}
+}
+
+EXIT_STATUS=0
+
 for impl in ${!implementations[@]}; do
     echo Testing with ${impl}
     case ${implementations[$impl]} in
@@ -38,6 +51,14 @@ for impl in ${!implementations[@]}; do
     for file in test/*.scm; do
 	scheme-env run ${impl} \
 		   --loadpath src $testpath \
-		   --standard r6rs --program ${file}
+		   --standard r6rs --program ${file} | check_output
+	case ${EXIT_STATUS} in
+	    0) EXIT_STATUS=$? ;;
+	esac
     done
+    echo Done!
+    echo
 done
+
+echo Exit status ${EXIT_STATUS}
+exit ${EXIT_STATUS}
