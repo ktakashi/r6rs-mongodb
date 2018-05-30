@@ -5,6 +5,7 @@ branches:
   only:
     - master
 
+services: mongodb
 addons:
   apt:
     packages:
