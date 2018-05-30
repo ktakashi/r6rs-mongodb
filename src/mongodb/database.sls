@@ -60,6 +60,12 @@
 	    mongodb-database-upsert
 	    mongodb-database-update-all
 	    mongodb-database-update-request ;; low level
+	    mongodb-database-update-command
+
+	    mongodb-database-delete
+	    mongodb-database-delete-all
+	    mongodb-database-delete-request ;; low level
+	    mongodb-database-delete-command
 	    )
     (import (rnrs)
 	    (mongodb connection)
@@ -235,6 +241,29 @@
   (mongodb-database-run-command database
    `(("update" ,collection)
      ("updates" ,updates)
+     . ,(->command-options opts))))
+
+;; OP_DELETE
+(define (mongodb-database-delete db names selector)
+  (mongodb-database-delete-request db names 1 selector))
+(define (mongodb-database-delete-all db names selector)
+  (mongodb-database-delete-request db names 0 selector))
+(define (mongodb-database-delete-request db names flags selector)
+  (check-connection-open 'mongodb-database-update-request db)
+  (let ((delete (make-op-delete (->full-collection-name db names)
+				flags selector)))
+    (mongodb-protocol-message-request-id-set! delete
+     (mongodb-database-request-id! db))
+    (write-mongodb-message (mongodb-database-output-port db) delete)
+    (check-last-error 'mongodb-database-delete-request db)))
+
+;; delete command
+;; FIXME it's rather weird API and users need to know the specification of
+;; insert command. (e.g. writerConcern)
+(define (mongodb-database-delete-command database collection deletes . opts)
+  (mongodb-database-run-command database
+   `(("delete" ,collection)
+     ("deletes" ,deletes)
      . ,(->command-options opts))))
 
 (define (mongodb-database-run-command db command)

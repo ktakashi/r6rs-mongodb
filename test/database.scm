@@ -17,6 +17,7 @@
 (define (create-test-data count)
   (define (gen i)
     `(("id" ,i)
+      ("name" "name1")
       ("data" "some data")))
   (list->vector (do ((i 0 (+ i 1)) (r '() (cons (gen i) r)))
 		    ((= i count) r))))
@@ -46,18 +47,29 @@
 		 (mongodb-query-result-documents
 		  (mongodb-database-query db collection '()))))
 
-    (test-assert "insert 1"
+    (test-assert "insert many"
+		 (mongodb-database-insert db collection
+					  (create-test-data 10)))
+
+    (test-equal "10 documents are inserted"
+		10
+		(vector-length
+		 (mongodb-query-result-documents
+		  (mongodb-database-query db collection '(("name" "name1"))))))
+    
+    (test-assert "update 1"
 		 (mongodb-database-update db collection
 					  '(("lang" "Scheme"))
 					  '(("$set"
 					     (("comment" "It's useful"))))))
-    (test-equal "insert query"
+
+    (test-equal "update query"
 		'#((("name" "R6RS mongodb")
 		    ("lang" "Scheme")
 		    ("comment" "It's useful")))
 		(strip-default-id
 		 (mongodb-query-result-documents
-		  (mongodb-database-query db collection '()))))
+		  (mongodb-database-query db collection '(("lang" "Scheme"))))))
     
     (test-assert "upsert 1"
 		 (mongodb-database-upsert db collection
@@ -81,6 +93,19 @@
 		(strip-default-id
 		 (mongodb-query-result-documents
 		  (mongodb-database-query db collection '(("lang" "C"))))))
+
+    (test-assert (mongodb-database-delete db collection '(("name" "name1"))))
+    (test-equal "1 record is removed"
+		9
+		(vector-length
+		 (mongodb-query-result-documents
+		  (mongodb-database-query db collection '(("name" "name1"))))))
+    (test-assert (mongodb-database-delete-all db collection '(("name" "name1"))))
+    (test-equal "all records are removed"
+		0
+		(vector-length
+		 (mongodb-query-result-documents
+		  (mongodb-database-query db collection '(("name" "name1"))))))
     
     (close-mongodb-connection! conn)))
 

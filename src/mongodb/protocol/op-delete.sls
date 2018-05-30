@@ -66,10 +66,10 @@ struct {
 		  (assertion-violation 'make-op-delete
 				       "Invalid op-code" header)))
 	      (case-lambda
-	       (()
+	       ((fcn fl selector)
 		(let ((header (make-msg-header)))
 		  (msg-header-op-code-set! header *op-code:delete*)
-		  ((p header #f 0) 0 '())))
+		  ((p header fcn fl) 0 selector)))
 	       ((header zero fcn fl selector)
 		(check-header header)
 		((p header fcn fl) 0 selector))))))
