@@ -69,6 +69,21 @@
 		  (mongodb-database-query db collection '(("name" "name1"))
 					  3 4))))
     ;; TODO cursor tests
+    (let* ((r (mongodb-database-query db collection '(("name" "name1")) 0 3))
+	   (cid (mongodb-query-result-cursor-id r)))
+      (test-assert "cursor id 0"
+		   (not (mongodb-database-get-more db collection 0)))
+      (test-equal "get more 1"
+		  4
+		  (vector-length
+		   (mongodb-query-result-documents
+		    (mongodb-database-get-more db collection cid 4))))
+      ;; default should be bigger than 3...
+      (test-equal "get more 2"
+		  3
+		  (vector-length
+		   (mongodb-query-result-documents
+		    (mongodb-database-get-more db collection cid)))))
     
     (test-assert "update 1"
 		 (mongodb-database-update db collection

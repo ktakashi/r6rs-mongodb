@@ -64,10 +64,10 @@
 		  (assertion-violation 'make-op-get-more
 				       "Invalid op-code" header)))
 	      (case-lambda
-	       (()
+	       ((fcn nr cid)
 		(let ((header (make-msg-header)))
 		  (msg-header-op-code-set! header *op-code:get-more*)
-		  ((p header #f) 0 0 0)))
+		  ((p header fcn) 0 nr cid)))
 	       ((header zero fcn nr cid)
 		(check-header header)
 		((p header fcn) zero nr cid))))))

@@ -51,6 +51,8 @@
 	    mongodb-database-query
 	    mongodb-database-query/selector
 	    mongodb-database-query-request ;; low level
+
+	    mongodb-database-get-more
 	    
 	    mongodb-database-insert
 	    mongodb-database-insert-request ;; low level
@@ -176,16 +178,29 @@
   (mongodb-database-query-request
    database collection-names skipn returnn query rfs))
 
+(define (send-message database msg)
+  (mongodb-protocol-message-request-id-set! msg
+   (mongodb-database-request-id! database))
+  (write-mongodb-message (mongodb-database-output-port database) msg))
+(define (receive-reply database)
+  (op-reply->database-reply
+   (read-mongodb-message (mongodb-database-input-port database))))
+
 (define (mongodb-database-query-request database col-names ns nr query rfs)
   (check-connection-open 'mongodb-database-query-request database)
-  (let ((query (make-op-query (->full-collection-name database col-names)
-			      ns nr query rfs)))
-    (mongodb-protocol-message-request-id-set! query
-     (mongodb-database-request-id! database))
-    (write-mongodb-message (mongodb-database-output-port database) query)
-    (op-reply->database-reply
-     (read-mongodb-message (mongodb-database-input-port database)))))
+  (let* ((fcn (->full-collection-name database col-names))
+	 (query (make-op-query fcn ns nr query rfs)))
+    (send-message database query)
+    (receive-reply database)))
 
+;; returns #f or query-result
+(define (mongodb-database-get-more database collection-names cid . opt)
+  (define nr (if (null? opt) 0 (car opt)))
+  (and (not (zero? cid))
+       (let* ((fcn (->full-collection-name database collection-names))
+	      (get-more (make-op-get-more fcn nr cid)))
+	 (send-message database get-more)
+	 (receive-reply database))))
 
 ;; OP_INSERT
 (define (mongodb-database-insert database collection-names documents . options)
@@ -196,9 +211,7 @@
 (define (mongodb-database-insert-request db names flags doc*)
   (check-connection-open 'mongodb-database-insert-request db)
   (let ((insert (make-op-insert flags (->full-collection-name db names) doc*)))
-    (mongodb-protocol-message-request-id-set! insert
-     (mongodb-database-request-id! db))
-    (write-mongodb-message (mongodb-database-output-port db) insert)
+    (send-message db insert)
     (unless (bitwise-bit-set? flags 0)
       (check-last-error 'mongodb-database-insert-request db))))
 
@@ -227,9 +240,7 @@
   (check-connection-open 'mongodb-database-update-request db)
   (let ((update (make-op-update (->full-collection-name db names) flags
 				selector update)))
-    (mongodb-protocol-message-request-id-set! update
-     (mongodb-database-request-id! db))
-    (write-mongodb-message (mongodb-database-output-port db) update)
+    (send-message db update)
     (check-last-error 'mongodb-database-update-request db)))
 
 ;; update command
@@ -248,9 +259,7 @@
   (check-connection-open 'mongodb-database-update-request db)
   (let ((delete (make-op-delete (->full-collection-name db names)
 				flags selector)))
-    (mongodb-protocol-message-request-id-set! delete
-     (mongodb-database-request-id! db))
-    (write-mongodb-message (mongodb-database-output-port db) delete)
+    (send-message db delete)
     (check-last-error 'mongodb-database-delete-request db)))
 
 ;; delete command
