@@ -45,6 +45,7 @@
 
 	    mongodb-database-get-last-error
 	    mongodb-database-run-command
+	    mongodb-database-drop-collection
 	    mongodb-database-admin-command
 	    
 	    mongodb-database-query
@@ -53,6 +54,12 @@
 	    
 	    mongodb-database-insert
 	    mongodb-database-insert-request ;; low level
+	    mongodb-database-insert-command ;; low level?
+
+	    mongodb-database-update
+	    mongodb-database-upsert
+	    mongodb-database-update-all
+	    mongodb-database-update-request ;; low level
 	    )
     (import (rnrs)
 	    (mongodb connection)
@@ -206,6 +213,46 @@
     (unless (bitwise-bit-set? flags 0)
       (check-last-error 'mongodb-database-insert-request db))))
 
+(define (->command-options opts)
+  (if (null? opts)
+      opts
+      (map (lambda (p)
+	     (if (symbol? (car p))
+		 (cons (symbol->string (car p)) (cdr p))
+		 p)) opts)))
+;; insert command
+;; FIXME it's rather weird API and users need to know the specification of
+;; insert command. (e.g. writerConcern)
+(define (mongodb-database-insert-command database collection documents . opts)
+  (mongodb-database-run-command database
+   `(("insert" ,collection)
+     ("documents" ,documents)
+     . ,(->command-options opts))))
+
+;; OP_UPDATE
+(define (mongodb-database-update database collection-names selector update)
+  (mongodb-database-update-request database collection-names 0 selector update))
+(define (mongodb-database-upsert database collection-names selector update)
+  (mongodb-database-update-request database collection-names 1 selector update))
+(define (mongodb-database-update-all database collection-names selector update)
+  (mongodb-database-update-request database collection-names 2 selector update))
+(define (mongodb-database-update-request db names flags selector update)
+  (check-connection-open 'mongodb-database-update-request db)
+  (let ((update (make-op-update (->full-collection-name db names) flags
+				selector update)))
+    (mongodb-protocol-message-request-id-set! update
+     (mongodb-database-request-id! db))
+    (write-mongodb-message (mongodb-database-output-port db) update)
+    (check-last-error 'mongodb-database-update-request db)))
+
+;; update command
+;; FIXME it's rather weird API and users need to know the specification of
+;; insert command. (e.g. writerConcern)
+(define (mongodb-database-update-command database collection updates . opts)
+  (mongodb-database-run-command database
+   `(("update" ,collection)
+     ("updates" ,updates)
+     . ,(->command-options opts))))
 
 (define (mongodb-database-run-command db command)
   (define (ensure-bson command)
@@ -218,6 +265,10 @@
 
 (define (mongodb-database-get-last-error db)
   (mongodb-database-run-command db "getLastError"))
+
+(define (mongodb-database-drop-collection db collection)
+  ;; The documentation is incorrect... fxxk!!
+  (mongodb-database-run-command db `(("drop" ,collection))))
 
 (define (mongodb-database-admin-command db command)
   (mongodb-connection-run-command (mongodb-database-connection db) command))

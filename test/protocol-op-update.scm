@@ -6,12 +6,12 @@
 
 (test-begin "OP_UPDATE")
 
-(test-assert (op-update? (make-op-update)))
+(test-assert (op-update? (make-op-update "test" 0 '() '())))
 (test-error assertion-violation? (make-op-update #f 0 0 0 '() '()))
 (test-error assertion-violation?
 	    (make-op-update (make-msg-header) 0 0 0 '() '()))
 
-(let ((msg (make-op-update)))
+(let ((msg (make-op-update "test" 0 '() '())))
   (define raw-msg #vu8(0 0 0 0
 		       #x61 #x62 #x63 #x00
 		       0 0 0 0

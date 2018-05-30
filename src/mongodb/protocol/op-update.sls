@@ -61,10 +61,10 @@
 		  (assertion-violation 'make-op-update
 				       "Invalid op-code" header)))
 	      (case-lambda
-	       (()
+	       ((fcn fl s u)
 		(let ((header (make-msg-header)))
 		  (msg-header-op-code-set! header *op-code:update*)
-		  ((p header #f 0) 0 #f #f)))
+		  ((p header fcn fl) 0 s u)))
 	       ((header zero fcn fl s u)
 		(check-header header)
 		((p header fcn fl) zero s u))))))
