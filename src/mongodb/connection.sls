@@ -99,9 +99,17 @@
 (define (mongodb-connection-request-id! conn)
   ((mongodb-connection-request-id-strategy conn) conn #f))
 
-(define (open-mongodb-connection! connection)
-  (let ((socket (tcp-connect (mongodb-connection-host connection)
-			     (mongodb-connection-port connection))))
+(define (open-mongodb-connection! connection . maybe-socket-converter)
+  (define socket-converter
+    (if (null? maybe-socket-converter)
+	values
+	(car maybe-socket-converter)))
+  (unless (procedure? socket-converter)
+    (assertion-violation 'open-mongodb-connection!
+			 "Socket convert must be a procedure" socket-converter))
+  (let ((socket (socket-converter
+		 (tcp-connect (mongodb-connection-host connection)
+			      (mongodb-connection-port connection)))))
     (mongodb-connection-socket-set! connection socket)
     connection))
 

@@ -175,6 +175,18 @@
      (op-reply-starting-from op-reply)
      (op-reply-documents op-reply))))
 
+;; Database authentication is a bit troublesome, so we don't do it here.
+;; https://docs.mongodb.com/manual/core/authentication/
+;; However, we provider enough APIs to implement this
+;;
+;; (define (mongodb-database-authenticate database username password)
+;;   (let ((r (mongodb-database-run-command database
+;; 	    `(("authenticate" 1) ("user" ,username) ("pwd" ,password)))))
+;;     (display r) (newline)
+;;     (cond ((assoc "ok" r) =>
+;; 	   (lambda (slot) (not (zero? (cadr slot)))))
+;; 	  (else #f))))
+
 (define (mongodb-database-query database collection-names query . maybe-options)
   (define skipn (if (null? maybe-options) 0 (car maybe-options)))
   (define returnn (if (or (null? maybe-options) (null? (cdr maybe-options)))
