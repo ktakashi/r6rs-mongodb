@@ -39,6 +39,7 @@
 	    mongodb-cursor? make-mongodb-cursor
 	    mongodb-cursor-id
 	    mongodb-cursor-ns
+	    mongodb-cursor-database ;; internal only
 	    
 	    mongodb-query-result?
 	    mongodb-query-result-id
@@ -196,8 +197,13 @@
    database collection-names skipn returnn query rfs))
 
 (define (send-message database msg)
-  (let ((request-id (mongodb-database-request-id! database)))
-    (mongodb-protocol-message-request-id-set! msg request-id)
+  (define (get/generate-request-id database msg)
+    (cond ((mongodb-protocol-message-request-id msg))
+	  (else
+	   (let ((request-id (mongodb-database-request-id! database)))
+	     (mongodb-protocol-message-request-id-set! msg request-id)
+	     request-id))))
+  (let ((request-id (get/generate-request-id database msg)))
     (write-mongodb-message (mongodb-database-output-port database) msg)
     request-id))
 (define (receive-reply database fcn)
