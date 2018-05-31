@@ -21,14 +21,17 @@ create_symlink -d %3a98 test/lib/srfi/:98
 gcc -fPIC -shared -O3 src/mongodb/net/tcp/chez.c -o src/mongodb/net/tcp/chez.so
 
 # check mongod is running or not
-service mongod status | grep running > /dev/null
-case $? in
-    0)
-	export MONGODB_RUNNING=yes
-	echo MongoDB is running ... yes
-	;;
-    *) 	echo MongoDB is running ... no
-esac
+if [ x"${MONGODB_RUNNING}" = x"" ]; then
+    service mongod status | grep running > /dev/null
+    case $? in
+	0)
+	    export MONGODB_RUNNING=yes
+	    echo Checking MongoDB is running ... yes
+	    ;;
+	*)
+	    echo Checking MongoDB is running ... no
+    esac
+fi
 
 check_output() {
     local status=0
