@@ -22,8 +22,10 @@
   (list->vector (do ((i 0 (+ i 1)) (r '() (cons (gen i) r)))
 		    ((= i count) r))))
 (define (strip-default-id vec)
-  (list->vector
-   (map (lambda (s) (remp (lambda (s) (string=? "_id" (car s))) s))
+  (list->vector 
+   (map (lambda (s)
+	  (remp (lambda (s) (string=? "_id" (car s)))
+		(list-sort (lambda (a b) (string<? (car a) (car b))) s)))
 	(vector->list vec))))
 
 (define conn (make-mongodb-connection "localhost"))
@@ -41,9 +43,9 @@
 					  '#((("name" "R6RS mongodb")
 					      ("lang" "Scheme")
 					      ("comment" "It's useless")))))
-    (test-equal '#((("name" "R6RS mongodb")
+    (test-equal '#((("comment" "It's useless")
 		    ("lang" "Scheme")
-		    ("comment" "It's useless")))
+		    ("name" "R6RS mongodb")))
 		(strip-default-id
 		 (mongodb-query-result-documents
 		  (mongodb-database-query db collection '()))))
@@ -86,9 +88,9 @@
 					     (("comment" "It's useful"))))))
 
     (test-equal "update query"
-		'#((("name" "R6RS mongodb")
+		'#((("comment" "It's useful")
 		    ("lang" "Scheme")
-		    ("comment" "It's useful")))
+		    ("name" "R6RS mongodb")))
 		(strip-default-id
 		 (mongodb-query-result-documents
 		  (mongodb-database-query db collection '(("lang" "Scheme"))))))
@@ -107,10 +109,9 @@
 					     (("lang" "C")
 					      ("name" "Default driver?")
 					      ("comment" "No idea"))))))
-    ;; FIXME order might be different
     (test-equal "upsert query"
-		'#((("lang" "C")
-		    ("comment" "No idea")
+		'#((("comment" "No idea")
+		    ("lang" "C")
 		    ("name" "Default driver?")))
 		(strip-default-id
 		 (mongodb-query-result-documents
