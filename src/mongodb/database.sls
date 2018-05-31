@@ -36,14 +36,15 @@
     (export mongodb-database? make-mongodb-database
 	    mongodb-invalid-cursor? mongodb-query-failure?
 
+	    mongodb-cursor? make-mongodb-cursor
+	    mongodb-cursor-id
+	    mongodb-cursor-ns
+	    
 	    mongodb-query-result?
 	    mongodb-query-result-id
 	    mongodb-query-result-to
-	    mongodb-query-result-cursor-id
 	    mongodb-query-result-starting-from
 	    mongodb-query-result-documents
-	    mongodb-query-result-full-collection-name ;; for developers
-	    mongodb-query-result-full-collection-name-set! ;; for developers
 
 	    mongodb-database-get-last-error
 	    mongodb-database-run-command
@@ -54,12 +55,12 @@
 	    mongodb-database-query/selector
 	    mongodb-database-query-request ;; low level
 
-	    mongodb-database-query-get-more
+	    mongodb-database-cursor-get-more
 	    mongodb-database-kill-cursors
 	    
 	    mongodb-database-insert
 	    mongodb-database-insert-request ;; low level
-	    mongodb-database-insert-command ;; low level?
+	    mongodb-database-insert-command
 
 	    mongodb-database-update
 	    mongodb-database-upsert
@@ -100,15 +101,18 @@
 				       name))
 		(p connection name)))))
 
+(define-record-type mongodb-cursor
+  (fields id				; cursor id
+	  database			; database (for connection)
+	  ns))				; namespace (full collection name)
+
 ;; NB AwaitCapable is always set so we don't handle it
 (define-record-type mongodb-query-result
+  (parent mongodb-cursor)
   (fields id		;; message id
 	  to		;; response to
-	  cursor-id	;; for next query
 	  starting-from ;; for cursor
 	  documents	;; documents
-	  database	;; database
-	  (mutable full-collection-name) ;; for book keeping
 	  ))
 
 (define-condition-type &mogodb-invalid-cursor &mongodb
@@ -162,13 +166,13 @@
 				  err))))
     ;; we ignore the rest (i.e. 2 and 3)
     (make-mongodb-query-result
+     (op-reply-cursor-id op-reply)
+     database
+     fcn
      (mongodb-protocol-message-request-id op-reply)
      (mongodb-protocol-message-response-to op-reply)
-     (op-reply-cursor-id op-reply)
      (op-reply-starting-from op-reply)
-     (op-reply-documents op-reply)
-     database
-     fcn)))
+     (op-reply-documents op-reply))))
 
 (define (mongodb-database-query database collection-names query . maybe-options)
   (define skipn (if (null? maybe-options) 0 (car maybe-options)))
@@ -218,19 +222,19 @@
     (send-message database query)))
   
 ;; returns #f or query-result
-(define (mongodb-database-query-get-more query . opt)
+(define (mongodb-database-cursor-get-more cursor . opt)
   (define nr (if (null? opt) 0 (car opt)))
-  (and (mongodb-database-send-get-more query nr)
-       (let ((fcn (mongodb-query-result-full-collection-name query))
-	     (database (mongodb-query-result-database query)))
+  (and (mongodb-database-send-get-more cursor nr)
+       (let ((fcn (mongodb-cursor-ns cursor))
+	     (database (mongodb-cursor-database cursor)))
 	 (receive-reply database fcn))))
 
 (define (mongodb-database-send-get-more query nr)
-  (define cid (mongodb-query-result-cursor-id query))
-  (define database (mongodb-query-result-database query))
+  (define cid (mongodb-cursor-id query))
+  (define database (mongodb-cursor-database query))
   (check-connection-open 'mongodb-database-get-more database)
   (and (not (zero? cid))
-       (let* ((fcn (mongodb-query-result-full-collection-name query))
+       (let* ((fcn (mongodb-cursor-ns query))
 	      (get-more (make-op-get-more fcn nr cid))
 	      (to (mongodb-query-result-to query))
 	      (out (mongodb-database-output-port database)))
@@ -238,12 +242,12 @@
 	 (write-mongodb-message out get-more)
 	 to)))
 
-(define (mongodb-database-kill-cursors database . query*)
+(define (mongodb-database-kill-cursors database . cursor*)
   (check-connection-open 'mongodb-database-kill-cursors database)
   (let ((kill (make-op-kill-cursors
 	       (list->vector
 		(filter positive?
-			(map mongodb-query-result-cursor-id query*))))))
+			(map mongodb-cursor-id cursor*))))))
     (send-message database kill)))
 
 ;; OP_INSERT

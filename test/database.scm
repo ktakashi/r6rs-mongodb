@@ -71,13 +71,13 @@
 		  4
 		  (vector-length
 		   (mongodb-query-result-documents
-		    (mongodb-database-query-get-more r 4))))
+		    (mongodb-database-cursor-get-more r 4))))
       ;; default should be bigger than 3...
       (test-equal "get more 2"
 		  3
 		  (vector-length
 		   (mongodb-query-result-documents
-		    (mongodb-database-query-get-more r)))))
+		    (mongodb-database-cursor-get-more r)))))
     
     (test-assert "update 1"
 		 (mongodb-database-update db collection
