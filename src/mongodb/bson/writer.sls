@@ -44,6 +44,7 @@
 	    write-object-id-element
 	    write-boolean-element
 	    write-utc-datetime-element
+	    write-iso-date-element
 	    write-null-element
 	    write-regex-element
 	    write-db-pointer-element
@@ -63,6 +64,7 @@
 	    (mongodb bson conditions)
 	    (mongodb bson validators)
 	    (mongodb util bytevectors)
+	    (mongodb util iso-date)
 	    (mongodb util ports)
 	    (mongodb util uuid))
 
@@ -154,6 +156,12 @@
   (write-cstring out (car element))
   (let ((value (cadr element)))
     (write-int64 out (cadr value))))
+(define (write-iso-date-element out element)
+  (put-u8 out #x09)
+  (write-cstring out (car element))
+  (let ((value (cadr element)))
+    (write-int64 out (iso-date-string->milliseconds (cadr value)))))
+
 (define (write-null-element out element)
   (put-u8 out #x0A)
   (write-cstring out (car element)))
@@ -227,6 +235,7 @@
     (,(type-of? 'object-id) ,write-object-id-element)
     (,boolean? ,write-boolean-element)
     (,(type-of? 'utc-datetime) ,write-utc-datetime-element)
+    (,(type-of? 'iso-date) ,write-iso-date-element)
     (,(symbol-of? 'null) ,write-null-element)
     (,(type-of? 'regex) ,write-regex-element)
     (,(type-of? 'db-pointer) ,write-db-pointer-element)

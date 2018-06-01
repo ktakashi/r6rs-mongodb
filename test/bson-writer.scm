@@ -165,6 +165,18 @@
 		 #x61 #x62 #x63 #x00
 		 #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00)
 	    write-element '("abc" (utc-datetime 1)))
+(test-write "write-iso-date-element (1)"
+	    #vu8(#x09
+		 #x61 #x62 #x63 #x00
+		 #x00 #x00 #x00 #x00 #x00 #x00 #x00 #x00)
+	    write-iso-date-element
+	    '("abc" (iso-date "1970-01-01T00:00:00Z")))
+(test-write "write-iso-date-element (2)"
+	    #vu8(#x09
+		 #x61 #x62 #x63 #x00
+		 #x00 #x00 #x00 #x00 #x00 #x00 #x00 #x00)
+	    write-element '("abc" (iso-date "1970-01-01T00:00:00Z")))
+
 
 (test-write "write-null-element (1)"
 	    #vu8(#x0A #x61 #x62 #x63 #x00)
