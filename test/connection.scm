@@ -31,7 +31,7 @@
     (test-assert "output-port?"
 		 (output-port? (mongodb-connection-output-port conn)))
     (test-assert "list-databases"
-		 (assoc "databases" (mongodb-connection-list-databases conn)))
+		 (member "admin" (mongodb-connection-list-databases conn)))
     (test-assert "close"
 		 (mongodb-connection? (close-mongodb-connection! conn)))))
 
