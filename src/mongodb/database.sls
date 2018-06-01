@@ -279,7 +279,7 @@
 ;; OP_INSERT
 (define (mongodb-database-insert database collection-names documents . options)
   ;; add ignore error flag
-  (define flags (if (null? options) 0 (and (car options) 1)))
+  (define flags (if (null? options) 0 (or (and (car options) 1) 0)))
   (mongodb-database-insert-request database collection-names flags documents))
 
 (define (mongodb-database-insert-request db names flags doc*)
