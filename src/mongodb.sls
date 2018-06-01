@@ -48,7 +48,6 @@
 	    mongodb-database-query
 	    mongodb-database-query/selector
 	    mongodb-database-insert
-	    mongodb-database-insert-request
 	    mongodb-database-update
 	    mongodb-database-upsert
 	    mongodb-database-update-all
@@ -93,7 +92,8 @@
 	    mongodb-database-kill-cursors
 	    
 	    mongodb-database-insert-command
-
+	    mongodb-database-insert-request
+	    
 	    mongodb-database-update-request
 	    mongodb-database-update-command
 
