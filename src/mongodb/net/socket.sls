@@ -33,13 +33,14 @@
 (library (mongodb net socket)
     (export socket? 
 	    socket-close! socket-input-port socket-output-port
-	    ;; internal only (I want sort of package accessible ...) 
+	    ;; for developers (e.g. socket-converter)
 	    make-socket
+	    socket-raw-socket
 	    )
     (import (rnrs))
 
 (define-record-type socket
-  (fields closer input-port output-port))
+  (fields raw-socket closer input-port output-port))
 
 (define (socket-close! socket) ((socket-closer socket)))
 )

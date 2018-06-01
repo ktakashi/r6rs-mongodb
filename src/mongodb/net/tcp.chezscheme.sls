@@ -61,7 +61,8 @@
 
 (define (tcp-connect host service)
   (let ((s (make-client-socket host service)))
-    (socket:make-socket (lambda ()
+    (socket:make-socket s
+			(lambda ()
 			  (socket-shutdown s)
 			  (close s))
 			(open-fd-input-port s 'none)

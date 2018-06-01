@@ -42,7 +42,8 @@
 		  (let-values (((port . _) (get-service-by-name service)))
 		    port))))
     (let ((s (make-client-socket host port)))
-      (socket:make-socket (lambda ()
+      (socket:make-socket s
+			  (lambda ()
 			    (close-input-port (socket-input-port s))
 			    (close-output-port (socket-output-port s)))
 			  (socket-input-port s)

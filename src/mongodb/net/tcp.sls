@@ -39,7 +39,8 @@
 (define (tcp-connect host service)
   ;; TODO IPv6 if possible
   (let ((s (srfi:make-client-socket host service)))
-    (make-socket (lambda ()
+    (make-socket s
+		 (lambda ()
 		   (srfi:socket-shutdown s srfi:*shut-rdwr*)
 		   (srfi:socket-close s))
 		 (srfi:socket-input-port s)
