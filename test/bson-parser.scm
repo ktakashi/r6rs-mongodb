@@ -2,6 +2,7 @@
 (import (rnrs)
 	(mongodb bson parser)
 	(mongodb bson conditions)
+	(mongodb util parameters)
 	(srfi :64))
 
 (test-begin "BSON parser")
@@ -217,8 +218,17 @@
 (test-values "read-utc-datetime-element (2)"
 	     (13 '("abc" (utc-datetime 1)))
 	     (read-bson read-element
-			#vu8(#x09 #x61 #x62 #x63 #x00
+			#vu8(#x09
+			     #x61 #x62 #x63 #x00
 			     #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00)))
+(parameterize ((*bson:use-iso-date* #t))
+  (test-values "read-utc-datetime-element (3)"
+	       (13 '("abc" (iso-date "1970-01-01T00:00:00Z")))
+	       (read-bson read-element
+			  #vu8(#x09
+			       #x61 #x62 #x63 #x00
+			       #x00 #x00 #x00 #x00 #x00 #x00 #x00 #x00))))
+
 
 (test-values "read-null-element (1)"
 	     (4 '("abc" null))
