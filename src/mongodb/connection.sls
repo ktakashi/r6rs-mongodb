@@ -158,7 +158,12 @@
       (vector-ref (op-reply-documents op-reply) 0))))
 
 (define (mongodb-connection-list-databases conn)
-  (mongodb-connection-run-command conn "listDatabases"))
+  (let ((doc (mongodb-connection-run-command conn "listDatabases")))
+    (cond ((assoc "databases" doc) =>
+	   (lambda (s)
+	     (map (lambda (doc) (cadr (assoc "name" doc)))
+		  (vector->list (cadr s)))))
+	  (else '()))))
 
 (define (check-socket-open who con)
   (unless (mongodb-connection-open? con)
