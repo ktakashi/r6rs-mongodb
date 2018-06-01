@@ -11,18 +11,19 @@
 	     (mongodb-connection? (make-mongodb-connection "localhost")))
 (test-assert "make connection 2"
 	     (mongodb-connection? (make-mongodb-connection "localhost" 27017)))
-(test-assert "make connection 3"
-	     (mongodb-connection?
-	      (make-mongodb-connection "localhost" 27017 #f)))
 (test-error "make connection 4"
 	    assertion-violation?
 	    (mongodb-connection?
 	     (make-mongodb-connection "localhost" 27017 1)))
 
-(define (strategy conn database?) 1)
+(define option
+  (make-mongodb-connection-option
+   (lambda (conn database?) 1)
+   values
+   #t))
   
 (when (get-environment-variable "MONGODB_RUNNING")
-  (let ((conn (make-mongodb-connection "localhost" 27017 strategy)))
+  (let ((conn (make-mongodb-connection "localhost" 27017 option)))
     (test-assert "open" (mongodb-connection? (open-mongodb-connection! conn)))
     (test-assert "opened?" (mongodb-connection-open? conn))
     (test-assert "input-port?"

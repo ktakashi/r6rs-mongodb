@@ -61,7 +61,7 @@
 	    read-string
 	    read-binary
 
-	    *bson:use-iso-date*
+	    *bson:use-iso-date?*
 	    )
     (import (rnrs)
 	    (mongodb util bytevectors)
@@ -73,7 +73,7 @@
 	    (mongodb bson validators))
 
 ;; should we convert utc-datetime to string?
-(define *bson:use-iso-date* (make-parameter #f))
+(define *bson:use-iso-date?* (make-parameter #f))
 
 ;;; BSON format in S-expr
 ;;; document ::= e-list
@@ -174,7 +174,7 @@
     (let ((millis (read-int64 in)))
       (values (+ size 8) 
 	      (list name
-		    (if (*bson:use-iso-date*)
+		    (if (*bson:use-iso-date?*)
 			`(iso-date ,(milliseconds->iso-date-string millis))
 			`(utc-datetime ,millis)))))))
 

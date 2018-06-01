@@ -221,7 +221,7 @@
 			#vu8(#x09
 			     #x61 #x62 #x63 #x00
 			     #x01 #x00 #x00 #x00 #x00 #x00 #x00 #x00)))
-(parameterize ((*bson:use-iso-date* #t))
+(parameterize ((*bson:use-iso-date?* #t))
   (test-values "read-utc-datetime-element (3)"
 	       (13 '("abc" (iso-date "1970-01-01T00:00:00Z")))
 	       (read-bson read-element

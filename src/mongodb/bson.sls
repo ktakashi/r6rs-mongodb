@@ -36,7 +36,7 @@
 	    bson-read
 	    bson-error?
 	    
-	    *bson:use-iso-date*)
+	    *bson:use-iso-date?*)
     (import (rnrs)
 	    (mongodb bson parser)
 	    (mongodb bson writer)

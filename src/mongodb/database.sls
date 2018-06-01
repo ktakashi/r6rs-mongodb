@@ -83,11 +83,15 @@
     (import (rnrs)
 	    (mongodb connection)
 	    (mongodb protocol)
-	    (mongodb conditions))
+	    (mongodb conditions)
+	    (mongodb bson)
+	    (mongodb util parameters))
 
 (define-record-type mongodb-database
   (fields connection
-	  name)
+	  name
+	  ;; frequently used
+	  use-iso-date?)
   (protocol (lambda (p)
 	      (lambda (connection name)
 		(unless (mongodb-connection? connection)
@@ -100,7 +104,9 @@
 		  (assertion-violation 'make-mongodb-database
 				       "Database name must be a string"
 				       name))
-		(p connection name)))))
+		(p connection name
+		   (mongodb-connection-option-use-iso-date?
+		    (mongodb-connection-option connection)))))))
 
 (define-record-type mongodb-cursor
   (fields id				; cursor id
@@ -219,9 +225,11 @@
     (write-mongodb-message (mongodb-database-output-port database) msg)
     request-id))
 (define (receive-reply database fcn)
-  (op-reply->database-reply
-   (read-mongodb-message (mongodb-database-input-port database))
-   database fcn))
+  (parameterize ((*bson:use-iso-date?*
+		  (mongodb-database-use-iso-date? database)))
+    (op-reply->database-reply
+     (read-mongodb-message (mongodb-database-input-port database))
+     database fcn)))
 
 (define (mongodb-database-receive-reply database)
   (check-connection-open 'mongodb-database-receive-reply database)

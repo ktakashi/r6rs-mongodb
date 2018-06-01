@@ -36,10 +36,16 @@
 	    mongodb-connection-open?
 	    mongodb-connection-input-port
 	    mongodb-connection-output-port
+	    mongodb-connection-option ;; internal only
 
 	    mongodb-connection-run-command
 	    mongodb-connection-list-databases
-	    
+
+	    (rename (connection-option? mongodb-connection-option?)
+		    (make-connection-option make-mongodb-connection-option)
+		    ;; internal only
+		    (connection-option-use-iso-date?
+		     mongodb-connection-option-use-iso-date?))
 
 	    &mongodb-connection
 	    mongodb-connection-error? make-mongodb-connection-error
@@ -54,39 +60,47 @@
 	    (mongodb net tcp)
 	    (mongodb protocol))
 
+(define-record-type connection-option
+  (fields request-id-strategy
+	  socket-converter
+	  use-iso-date?))
+(define (default-strategy)
+  (define count 0)
+  (lambda (conn maybe-database)
+    (set! count (+ count 1))
+    count))
+(define (default-option) (make-connection-option (default-strategy) values #t))
+
 (define-record-type mongodb-connection
   (fields host
 	  port
 	  (mutable socket)
 	  ;; per connection should be fine right?
-	  (mutable request-id-strategy))
+	  request-id-strategy ;; it's frequently used so a field would be better
+	  option)
   (protocol (lambda (p)
-	      (lambda (host . maybe-port)
+	      (lambda (host . maybe-port&option)
 		;; default port is 27017
-		(define port (if (null? maybe-port) 27017 (car maybe-port)))
-		(define strategy
-		  (if (or (null? maybe-port)
-			  (null? (cdr maybe-port))
-			  (not (cadr maybe-port)))
-		      (default-strategy)
-		      (cadr maybe-port)))
+		(define port (if (null? maybe-port&option)
+				 27017
+				 (car maybe-port&option)))
+		(define option
+		  (if (or (null? maybe-port&option)
+			  (null? (cdr maybe-port&option)))
+		      (default-option)
+		      (cadr maybe-port&option)))
 		(unless (string? host)
 		  (assertion-violation 'make-mongodb-connection
 				       "Host must be a string" host))
 		(unless (and (fixnum? port) (positive? port))
 		  (assertion-violation 'make-mongodb-connection
 				       "Port must be positive fixnum" port))
-		(unless (procedure? strategy)
+		(unless (connection-option? option)
 		  (assertion-violation 'make-mongodb-connection
-				       "Request ID strategy must be a procedure"
-				       strategy))
-		(p host (number->string port) #f strategy)))))
-
-(define (default-strategy)
-  (define count 0)
-  (lambda (conn maybe-database)
-    (set! count (+ count 1))
-    count))
+				       "Invalid MongoDB option" option))
+		(p host (number->string port) #f
+		   (connection-option-request-id-strategy option)
+		   option)))))
 
 (define-condition-type &mongodb-connection &mongodb
   make-mongodb-connection-error mongodb-connection-error?)
@@ -99,11 +113,9 @@
 (define (mongodb-connection-request-id! conn)
   ((mongodb-connection-request-id-strategy conn) conn #f))
 
-(define (open-mongodb-connection! connection . maybe-socket-converter)
+(define (open-mongodb-connection! connection)
   (define socket-converter
-    (if (null? maybe-socket-converter)
-	values
-	(car maybe-socket-converter)))
+    (connection-option-socket-converter (mongodb-connection-option connection)))
   (unless (procedure? socket-converter)
     (assertion-violation 'open-mongodb-connection!
 			 "Socket convert must be a procedure" socket-converter))

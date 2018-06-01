@@ -36,6 +36,9 @@
 	    mongodb-connection-open?
 	    mongodb-connection-list-databases
 
+	    mongodb-connection-option?
+	    make-mongodb-connection-option
+
 	    ;; for convenience
 	    call-with-mongodb-connection
 	    call-with-mongodb-database
@@ -159,18 +162,18 @@
   (reverse 
    (apply mongodb-query-fold (lambda (e r) (cons (proc e) r)) '() query opt)))
 
-(define (call-with-mongodb-connection host port proc . maybe-strategy)
+(define (call-with-mongodb-connection host port proc . maybe-option)
   (let ((conn (open-mongodb-connection!
-	       (apply make-mongodb-connection host port maybe-strategy))))
+	       (apply make-mongodb-connection host port maybe-option))))
     (guard (e (else (close-mongodb-connection! conn) (raise e)))
       (let ((r (proc conn)))
 	(close-mongodb-connection! conn)
 	r))))
 
-(define (call-with-mongodb-database host port database proc . maybe-strategy)
+(define (call-with-mongodb-database host port database proc . maybe-option)
   (apply call-with-mongodb-connection host port
 	 (lambda (conn)
 	   (proc (make-mongodb-database conn database)))
-	 maybe-strategy))
+	 maybe-option))
 
 )

@@ -42,8 +42,10 @@
     (test-assert (mongodb-database-insert db collection
 					  '#((("name" "R6RS mongodb")
 					      ("lang" "Scheme")
-					      ("comment" "It's useless")))))
+					      ("comment" "It's useless")
+					      ("date" (utc-datetime 0))))))
     (test-equal '#((("comment" "It's useless")
+		    ("date" (iso-date "1970-01-01T00:00:00Z"))
 		    ("lang" "Scheme")
 		    ("name" "R6RS mongodb")))
 		(strip-default-id
@@ -89,6 +91,7 @@
 
     (test-equal "update query"
 		'#((("comment" "It's useful")
+		    ("date" (iso-date "1970-01-01T00:00:00Z"))
 		    ("lang" "Scheme")
 		    ("name" "R6RS mongodb")))
 		(strip-default-id
