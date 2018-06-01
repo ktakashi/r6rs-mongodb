@@ -66,6 +66,7 @@ The above code prints more or less like this output (formatted for readability):
 # Documents
 
 - [Users' reference](doc/UsersReference.md)
+- [SBSON](doc/SBSON.md)
 - [Developers' reference](doc/DevelopersReference.md)
 
 # Copyright and lincence
