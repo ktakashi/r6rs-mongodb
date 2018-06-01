@@ -22,12 +22,12 @@ code shows the simple CRUD operation with this library:
 
 (mongodb-database-insert database collection
   '#(
-     (("id" 1) ("name" "R6RS MongoDB library") ("lang" "Scheme"))
-	 ))
+     (("id" 1) ("name" "R6RS MongoDB library") ("lang" "Scheme")))
+     )
 (mongodb-database-upsert database collection
   '(("name" "R7RS PostgreSQL library"))
   '(("$set"
-	(("id" 2) ("name" "R7RS PostgreSQL library") ("lang" "Scheme")))))
+     (("id" 2) ("name" "R7RS PostgreSQL library") ("lang" "Scheme")))))
 
 (mongodb-database-update database collection
   '(("id" 1))
@@ -65,8 +65,8 @@ The above code prints more or less like this output (formatted for readability):
 
 # Documents
 
-[Users' reference](doc/UsersReference.md)
-[Developers' reference](doc/DevelopersReference.md)
+- [Users' reference](doc/UsersReference.md)
+- [Developers' reference](doc/DevelopersReference.md)
 
 # Copyright and lincence
 
