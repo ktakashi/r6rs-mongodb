@@ -264,9 +264,26 @@ reached to the end.
 
 - `(mongodb-query-fold proc seed query-result)`
 - `(mongodb-query-fold proc seed query-result all?)`
+Folds the given `query-result` with given `seed` as its initial value
+using the `proc`. The `proc` receives 2 arguments, document and seed,
+respectively.
+
+This is an anologue of `fold`.
+
 - `(mongodb-query-for-each proc query-result)`
 - `(mongodb-query-for-each proc query-result all?)`
+Iterates all documents of `query-result` with the given `proc`. The `proc`
+receives a document as its argument.
+
+This is an anologue of `for-each`.
+
 - `(mongodb-query-map proc query-result)`
 - `(mongodb-query-map proc query-result all?)`
+Converts all documents of `query-result` with the return value of 
+the given `proc`. The `proc` receives a document as its argument.
 
+This is an anologue of `map`.
 
+For all procedures, if the second form is used and true value is 
+passed to `all?`, then the `query-result` would retrieve all the 
+result using the cursor.
