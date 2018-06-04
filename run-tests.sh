@@ -26,10 +26,10 @@ if [ x"${MONGODB_RUNNING}" = x"" ]; then
     case $? in
 	0)
 	    export MONGODB_RUNNING=yes
-	    echo Checking MongoDB is running ... yes
+	    echo Checking whether MongoDB is running ... yes
 	    ;;
 	*)
-	    echo Checking MongoDB is running ... no
+	    echo Checking whether MongoDB is running ... no
     esac
 fi
 

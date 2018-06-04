@@ -80,25 +80,20 @@
 	    mongodb-connection-closed?
 	    mongodb-invalid-cursor?
 	    mongodb-query-failure?
-	    
-	    ;; low level APIs
+
+	    ;; command
 	    mongodb-connection-run-command
-	    
 	    mongodb-database-run-command
 	    mongodb-database-admin-command
-	    mongodb-database-query-request
+	    
+	    mongodb-database-update-command	    
+	    mongodb-database-insert-command
+	    mongodb-database-delete-command
 
+	    ;; cursor bookkeeping
 	    mongodb-database-cursor-get-more
 	    mongodb-database-kill-cursors
-	    
-	    mongodb-database-insert-command
-	    mongodb-database-insert-request
-	    
-	    mongodb-database-update-request
-	    mongodb-database-update-command
-
-	    mongodb-database-delete-request
-	    mongodb-database-delete-command)
+	    )
     (import (rnrs)
 	    (mongodb conditions)
 	    (mongodb connection)

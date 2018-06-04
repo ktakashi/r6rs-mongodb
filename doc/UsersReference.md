@@ -138,6 +138,8 @@ NOTE: This is useful only for custom query writers.
 - `(mongodb-query-result? obj)`
 Returns `#t` if the given `obj` is MongoDB query result object, otherwise `#f`.
 
+The MongoDB query result type is a subtype of MongoDB cursor type.
+
 - `(mongodb-query-result-id query-result)`
 Returns request id of the `query-result`. 
 
@@ -150,6 +152,17 @@ Returns starting from of the `query-result`.
 - `(mongodb-query-result-documents query-result)`
 Returns SBSON documents of the `query-result`. The returning documents is
 a vector.
+
+- `(mongodb-database-cursor-get-more cursor)`
+- `(mongodb-database-cursor-get-more cursor number-to-return)`
+Returns query result if the given `cursor` still has documents to read.
+Otherwise `#f`.
+
+If the second form is used, then the number of documents returning
+by this procedure will be limited to the `number-to-return`.
+
+- `(mongodb-database-kill-cursors database cursor ...)`
+Terminates the given `cursors`.
 
 ## Insert operation
 
@@ -243,7 +256,7 @@ Retrieves the last error of the given `database` in SBSON format.
 - `(mongodb-database-drop-collection database collection)`
 Drops the given `collection` of the `database`.
 
-# Query result generators
+### Query result generators
 
 A generator is a thunk. This library provides generator conversion for
 better integration with [SRFI-121](https://srfi.schemers.org/srfi-121/)
@@ -260,7 +273,7 @@ NOTE: if the second form is used, then the cursor of the given `query-result`
 is consumed, thus low cursor operation may throw an error if the cursor
 reached to the end.
 
-# Query result fold, map and for-each
+### Query result fold, map and for-each
 
 - `(mongodb-query-fold proc seed query-result)`
 - `(mongodb-query-fold proc seed query-result all?)`
@@ -287,3 +300,30 @@ This is an anologue of `map`.
 For all procedures, if the second form is used and true value is 
 passed to `all?`, then the `query-result` would retrieve all the 
 result using the cursor.
+
+## Command execution
+
+- `(mongodb-database-insert-command database collection documents . options)`
+Executes *insert* command on the `collection` of the `database`.
+
+The `documents` must be a vector of the *documents* field described 
+in the official munual [insert](https://docs.mongodb.com/manual/reference/command/insert/)
+
+The `options` is the optional fields of the *insert* command.
+
+
+- `(mongodb-database-update-command database collection updates . options)`
+Executes *update* command on the `collection` of the `database`.
+
+The `updates` must be a vector of the *updates* field described 
+in the official munual [update](https://docs.mongodb.com/manual/reference/command/update/)
+
+The `options` is the optional fields of the *update* command.
+
+- `(mongodb-database-delete-command database collection deletes . options)`
+Executes *delete* command on the `collection` of the `database`.
+
+The `deletes` must be a vector of the *deletes* field described 
+in the official munual [delete](https://docs.mongodb.com/manual/reference/command/delete/)
+
+The `options` is the optional fields of the *delete* command.
