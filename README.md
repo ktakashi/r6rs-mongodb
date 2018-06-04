@@ -69,6 +69,14 @@ The above code prints more or less like this output (formatted for readability):
 - [SBSON](doc/SBSON.md)
 - [Developers' reference](doc/DevelopersReference.md)
 
+# Supporting implementations
+
+The following implementations are tested:
+
+- Sagittarius 0.9.2
+- Larceny 1.3
+- Chez Scheme v9.5
+
 # Copyright and lincence
 
 Copyright 2018 Takashi Kato. Code released under the BSD-style license.
