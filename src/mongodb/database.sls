@@ -34,7 +34,9 @@
 #!r6rs
 (library (mongodb database)
     (export mongodb-database? make-mongodb-database
+	    mongodb-database-name
 	    mongodb-invalid-cursor? mongodb-query-failure?
+	    (rename (->full-collection-name mongodb-database->namespace))
 
 	    mongodb-cursor? make-mongodb-cursor
 	    mongodb-cursor-id
