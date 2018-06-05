@@ -27,6 +27,12 @@
 (test-equal "iso-date-string->milliseconds (5)"
 	    1527776737123
 	    (iso-date-string->milliseconds "2018-05-31T14:25:37.123456Z"))
+(test-equal "iso-date-string->milliseconds (6)"
+	    1527776737000
+	    (iso-date-string->milliseconds "2018-05-31T14:25:37"))
+(test-equal "iso-date-string->milliseconds (7)"
+	    1527776737112
+	    (iso-date-string->milliseconds "2018-05-31T14:25:37.112"))
 
 (test-error "iso-date-string->milliseconds (e1)"
 	    assertion-violation?
@@ -52,5 +58,8 @@
 (test-error "iso-date-string->milliseconds (e8)"
 	    assertion-violation?
 	    (iso-date-string->milliseconds "2018-05-31T10:10:10.1aZ"))
+(test-error "iso-date-string->milliseconds (e9)"
+	    assertion-violation?
+	    (iso-date-string->milliseconds "2018-05-31T10:10:10.1A"))
 
 (test-end)

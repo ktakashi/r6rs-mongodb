@@ -164,7 +164,7 @@ by this procedure will be limited to the `number-to-return`.
 - `(mongodb-database-kill-cursors database cursor ...)`
 Terminates the given `cursors`.
 
-## Insert operation
+### Insert operation
 
 - `(mongodb-database-insert database collection documents)`
 - `(mongodb-database-insert database collection documents ignore-error)`
@@ -248,7 +248,7 @@ The first form deletes only one document selected by the `selector`.
 
 The second form deletes all documents selected by the `selector`.
 
-## Misc operations
+### Misc operations
 
 - `(mongodb-database-get-last-error database)`
 Retrieves the last error of the given `database` in SBSON format.
@@ -256,7 +256,7 @@ Retrieves the last error of the given `database` in SBSON format.
 - `(mongodb-database-drop-collection database collection)`
 Drops the given `collection` of the `database`.
 
-### Query result generators
+#### Query result generators
 
 A generator is a thunk. This library provides generator conversion for
 better integration with [SRFI-121](https://srfi.schemers.org/srfi-121/)
@@ -273,7 +273,7 @@ NOTE: if the second form is used, then the cursor of the given `query-result`
 is consumed, thus low cursor operation may throw an error if the cursor
 reached to the end.
 
-### Query result fold, map and for-each
+#### Query result fold, map and for-each
 
 - `(mongodb-query-fold proc seed query-result)`
 - `(mongodb-query-fold proc seed query-result all?)`
@@ -301,7 +301,7 @@ For all procedures, if the second form is used and true value is
 passed to `all?`, then the `query-result` would retrieve all the 
 result using the cursor.
 
-## Command execution
+### Command execution
 
 - `(mongodb-database-insert-command database collection documents . options)`
 Executes *insert* command on the `collection` of the `database`.
@@ -327,3 +327,17 @@ The `deletes` must be a vector of the *deletes* field described
 in the official munual [delete](https://docs.mongodb.com/manual/reference/command/delete/)
 
 The `options` is the optional fields of the *delete* command.
+
+- `(mongodb-database-run-command database command)`
+Executes the given `command` on the given `database`.
+
+
+- `(mongodb-connection-run-command connection command)`
+- `(mongodb-database-admin-command database command)`
+Executes the given `command` on the *admin* database.
+
+The first form uses the given MongoDB connection object `connection`.
+And the second form uses the given MongoDB database object `database`.
+
+The `command` must be complied with the specification written in the
+official document [Database Commands](https://docs.mongodb.com/manual/reference/command/).
