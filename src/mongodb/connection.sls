@@ -43,6 +43,8 @@
 
 	    (rename (connection-option? mongodb-connection-option?)
 		    (make-connection-option make-mongodb-connection-option)
+		    (default-strategy
+		      make-mongodb-connection-option-default-request-id-strategy)
 		    ;; internal only
 		    (connection-option-use-iso-date?
 		     mongodb-connection-option-use-iso-date?))

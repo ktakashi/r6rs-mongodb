@@ -38,7 +38,8 @@
 
 	    mongodb-connection-option?
 	    make-mongodb-connection-option
-
+	    make-mongodb-connection-option-default-request-id-strategy
+	    
 	    ;; for convenience
 	    call-with-mongodb-connection
 	    call-with-mongodb-database

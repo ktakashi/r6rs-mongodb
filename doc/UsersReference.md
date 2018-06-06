@@ -63,6 +63,12 @@ this library doesn't support TLS connection.
 `use-iso-date?` specifies the BSON reader to convert UTC time to ISO date 
 string or not.
 
+- `(make-mongodb-connection-option-default-request-id-strategy)`
+Returns a procedure which takes 2 arguments, connection and database.
+
+The returning procedure can be used for the *request-id-strategy* connection
+options described above.
+
 ## MongoDB database
 
 - `(mongodb-database?? obj)`
