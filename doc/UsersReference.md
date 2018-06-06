@@ -13,11 +13,14 @@ This is the library exports high level APIs
 ## MongoDB connection
 
 - `(mongodb-connection? obj)`
+
 Returns `#t` if the given `obj` is MongoDB connection, otherwise `#f`.
+
 
 - `(make-mongodb-connection host)`
 - `(make-mongodb-connection host port)`
 - `(make-mongodb-connection host port option)`
+
 Creates a MongoDB connection object which connects to given `host` with
 port number `27017.
 
@@ -27,24 +30,35 @@ represents the port number of the connecting `host`.
 If the third form is used, then the `option` must be a MongoDB connection
 option described below section.
 
+
 - `(open-mongodb-connection! connection)`
+
 Opens the given MogoDB connection `connection` and returns the `connection`
 
+
 - `(close-mongodb-connection! connection)`
+
 Closes the given MogoDB connection `connection` and returns the `connection`
 
+
 - `(mongodb-connection-open? connection)`
+
 Returns `#t` if the given `connection` is open. Otherwise `#f`.
 
+
 - `(mongodb-connection-list-databases connection)`
+
 Returns a string list of database names.
 
 ## MongoDB connection option
 
 - `(mongodb-connection-option? obj)`
+
 Returns `#t` if the given `obj` is MongoDB connection option, otherwise `#f`.
 
+
 - `(make-mongodb-connection-option request-id-strategy socket-converter use-iso-date?)`
+
 Creates a MongoDB connection option.
 
 `request-id-strategy` must be a procedure which takes 2 arguments,
@@ -63,7 +77,9 @@ this library doesn't support TLS connection.
 `use-iso-date?` specifies the BSON reader to convert UTC time to ISO date 
 string or not.
 
+
 - `(make-mongodb-connection-option-default-request-id-strategy)`
+
 Returns a procedure which takes 2 arguments, connection and database.
 
 The returning procedure can be used for the *request-id-strategy* connection
@@ -72,9 +88,12 @@ options described above.
 ## MongoDB database
 
 - `(mongodb-database?? obj)`
+
 Returns `#t` if the given `obj` is MongoDB database, otherwise `#f`.
 
+
 - `(make-mongodb-database connection name)`
+
 Creates a MongoDB database object.
 
 `connection` must be a MongoDB connection object.
@@ -86,6 +105,7 @@ Creates a MongoDB database object.
 - `(mongodb-database-query database collection query)`
 - `(mongodb-database-query database collection query number-to-skip)`
 - `(mongodb-database-query database collection query number-to-skip number-to-return)`
+
 Sends SBSON `query` to the given collection `collection` and returns
 query result object described below section.
 
@@ -121,9 +141,12 @@ which is MongoDB internal element.
 ### Cursor and query result
 
 - `(mongodb-cursor? obj)`
+
 Returns `#t` if the given `obj` is MongoDB cursor object, otherwise `#f`.
 
+
 - `(make-mongodb-cursor cursor-id database ns)`
+
 Creates a MongoDB cursor object.
 
 The `id` must be an positive integer no bigger than 64 bit.
@@ -132,48 +155,67 @@ The `database` must be a MongoDB database object.
 
 The `ns` must be a string of full collection name (namespace).
 
+
 - `(mongodb-cursor-id cursor)`
+
 Returns cursor id of the `cursor`. 
 
+
 - `(mongodb-cursor-ns cursor)`
+
 Returns namespace of the `cursor`. 
 
 
 NOTE: This is useful only for custom query writers.
 
 - `(mongodb-query-result? obj)`
+
 Returns `#t` if the given `obj` is MongoDB query result object, otherwise `#f`.
 
 The MongoDB query result type is a subtype of MongoDB cursor type.
 
+
 - `(mongodb-query-result-id query-result)`
+
 Returns request id of the `query-result`. 
 
+
 - `(mongodb-query-result-to query-result)`
+
 Returns response to of the `query-result`. 
 
+
 - `(mongodb-query-result-starting-from query-result)`
+
 Returns starting from of the `query-result`. 
 
+
 - `(mongodb-query-result-documents query-result)`
+
 Returns SBSON documents of the `query-result`. The returning documents is
 a vector.
 
+
 - `(mongodb-database-cursor-get-more cursor)`
 - `(mongodb-database-cursor-get-more cursor number-to-return)`
+
 Returns query result if the given `cursor` still has documents to read.
 Otherwise `#f`.
 
 If the second form is used, then the number of documents returning
 by this procedure will be limited to the `number-to-return`.
 
+
 - `(mongodb-database-kill-cursors database cursor ...)`
+
 Terminates the given `cursors`.
+
 
 ### Insert operation
 
 - `(mongodb-database-insert database collection documents)`
 - `(mongodb-database-insert database collection documents ignore-error)`
+
 Inserts the given vector of SBSON `documents` into the specified `collection`
 of the MongoDB database `database`.
 
@@ -227,9 +269,11 @@ respectively.
 	#t)
 ```
 
+
 - `(mongodb-database-update database collection selector update)`
 - `(mongodb-database-upsert database collection selector update)`
 - `(mongodb-database-update-all database collection selector update)`
+
 Updates the document(s) in the `collection` of the `database`.
 
 The `selector` must be a SBSON of the query selector specified by the
@@ -246,21 +290,77 @@ it insert the document, otherwise no operation.
 
 The third form updates all the selected documents.
 
+
 - `(mongodb-database-delete database collection selector)`
 - `(mongodb-database-delete-all database collection selector)`
+
 Deletes the document(s) in the `collection` of the `database`.
 
 The first form deletes only one document selected by the `selector`.
 
 The second form deletes all documents selected by the `selector`.
 
+
 ### Misc operations
 
 - `(mongodb-database-get-last-error database)`
+
 Retrieves the last error of the given `database` in SBSON format.
 
+
 - `(mongodb-database-drop-collection database collection)`
+
 Drops the given `collection` of the `database`.
+
+
+- `(call-with-mongodb-connection host port proc)`
+- `(call-with-mongodb-connection host port proc option)`
+
+Connects to the given `host` of the given `port` and calling the given
+`proc` passing freshly made MongoDB connection object. Returning
+value(s) of the `call-with-mongodb-connection` is the returning
+value(s) of the `proc`.
+
+The procedure always closes the connection so capturing continuation
+and reentering it would cause an error.
+
+The second form specifies the connection option.
+
+```scheme
+(call-with-mongodb-connection "localhost" 27017
+  (lambda (connection)
+    (let ((db1 (make-mongodb-database connection "db1"))
+	      (db2 (make-mongodb-database connection "db2")))
+      ;; CRUD operations agaist db1 and db2
+	  #t)))
+;; -> #t
+```
+
+
+- `(call-with-mongodb-database host port database-name proc)`
+- `(call-with-mongodb-database host port database-name proc option)`
+
+Connects to the given `host` of the given `port` and creating a
+MongoDB database object, then calling the given `proc` passing the
+database object. Returning value(s) of the
+`call-with-mongodb-database` is the returning value(s) of the `proc`.
+
+The procedure always closes the connection so capturing continuation
+and reentering it would cause an error.
+
+The second form specifies the connection option.
+
+This is useful when the connection only used once and connects to a
+single database.
+
+```scheme
+(call-with-mongodb-database "localhost" 27017 "db1"
+  (lambda (database)
+    (mongodb-query-map values
+	  (mongodb-database-query database "collection" '()))))
+;; -> list of SBSON documents
+```
+
 
 #### Query result generators
 
@@ -270,6 +370,7 @@ or [SRFI-158](https://srfi.schemers.org/srfi-158/)
 
 - `(mongodb-query-result->generator query-result)`
 - `(mongodb-query-result->get-more-generator query-result)`
+
 Returns a generator. The generator returns a SBSON document or EOF object
 when it reaches to the end.
 
@@ -279,25 +380,31 @@ NOTE: if the second form is used, then the cursor of the given `query-result`
 is consumed, thus low cursor operation may throw an error if the cursor
 reached to the end.
 
+
 #### Query result fold, map and for-each
 
 - `(mongodb-query-fold proc seed query-result)`
 - `(mongodb-query-fold proc seed query-result all?)`
+
 Folds the given `query-result` with given `seed` as its initial value
 using the `proc`. The `proc` receives 2 arguments, document and seed,
 respectively.
 
 This is an anologue of `fold`.
 
+
 - `(mongodb-query-for-each proc query-result)`
 - `(mongodb-query-for-each proc query-result all?)`
+
 Iterates all documents of `query-result` with the given `proc`. The `proc`
 receives a document as its argument.
 
 This is an anologue of `for-each`.
 
+
 - `(mongodb-query-map proc query-result)`
 - `(mongodb-query-map proc query-result all?)`
+
 Converts all documents of `query-result` with the return value of 
 the given `proc`. The `proc` receives a document as its argument.
 
@@ -307,9 +414,11 @@ For all procedures, if the second form is used and true value is
 passed to `all?`, then the `query-result` would retrieve all the 
 result using the cursor.
 
+
 ### Command execution
 
 - `(mongodb-database-insert-command database collection documents . options)`
+
 Executes *insert* command on the `collection` of the `database`.
 
 The `documents` must be a vector of the *documents* field described 
@@ -319,6 +428,7 @@ The `options` is the optional fields of the *insert* command.
 
 
 - `(mongodb-database-update-command database collection updates . options)`
+
 Executes *update* command on the `collection` of the `database`.
 
 The `updates` must be a vector of the *updates* field described 
@@ -326,7 +436,9 @@ in the official munual [update](https://docs.mongodb.com/manual/reference/comman
 
 The `options` is the optional fields of the *update* command.
 
+
 - `(mongodb-database-delete-command database collection deletes . options)`
+
 Executes *delete* command on the `collection` of the `database`.
 
 The `deletes` must be a vector of the *deletes* field described 
@@ -334,12 +446,15 @@ in the official munual [delete](https://docs.mongodb.com/manual/reference/comman
 
 The `options` is the optional fields of the *delete* command.
 
+
 - `(mongodb-database-run-command database command)`
+
 Executes the given `command` on the given `database`.
 
 
 - `(mongodb-connection-run-command connection command)`
 - `(mongodb-database-admin-command database command)`
+
 Executes the given `command` on the *admin* database.
 
 The first form uses the given MongoDB connection object `connection`.
