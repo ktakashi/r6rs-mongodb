@@ -17,26 +17,26 @@ element  ::= "(" e-name e-value ")"
 e-name   ::= cstring
 e-value  ::= 'min-key'                 ; BSON Min Key
            / 'max-key'                 ; BSON Max Key
-		   / <number>                  ; BSON 64-bit binary floating point
-		   / <string>                  ; BSON UTF-8 string
-		   / document
-		   / array
-		   / binary                    ; BSON Binary
-		   / "(" 'uuid' uuid ")"       ; BSON UUID subtype binary
-		   / 'undefine'                ; BSON undefine value
-		   / #t                        ; BSON Boolean true
-		   / #f                        ; BSON Boolean false
-		   / "(" 'utc-datetime' <integer> ")" ; BSON UTC datetime in millis
-		   / "(" 'iso-date' ISODate ")" ; BSON UTC datatime in ISO format
-		   / 'null'                    ; BSON Null value
-		   / "(" 'regex' regex flags ") | BSON regular experssion
-		   / "(" 'db-pointer' <string> <bytevector> ")" ; BSON DBPointer
-		   / "(" 'javascript' <string> ")" ; BSON JavaScript code
-		   / "(" 'symbol' <string> ")" ; BSON Symbol
-		   / "(" 'javascript/scope' <string> document ")" ; BSON JavaScript code w/ scope
-		   / "(" 's32' <32-bit-exact-integer> ")" ; BSON 32-bit integer
-		   / "(" 'u64' <64-bit-exact-integer> ")" ; BSON Timestamp (64-bit unsigned integer)
-   		   / "(" 's64' <64-bit-exact-integer> ")" ; BSON 64-bit integer
+           / <number>                  ; BSON 64-bit binary floating point
+           / <string>                  ; BSON UTF-8 string
+           / document
+           / array
+           / binary                    ; BSON Binary
+           / "(" 'uuid' uuid ")"       ; BSON UUID subtype binary
+           / 'undefine'                ; BSON undefine value
+           / #t                        ; BSON Boolean true
+           / #f                        ; BSON Boolean false
+           / "(" 'utc-datetime' <integer> ")" ; BSON UTC datetime in millis
+           / "(" 'iso-date' ISODate ")" ; BSON UTC datatime in ISO format
+           / 'null'                    ; BSON Null value
+           / "(" 'regex' regex flags ") | BSON regular experssion
+           / "(" 'db-pointer' <string> <bytevector> ")" ; BSON DBPointer
+           / "(" 'javascript' <string> ")" ; BSON JavaScript code
+           / "(" 'symbol' <string> ")" ; BSON Symbol
+           / "(" 'javascript/scope' <string> document ")" ; BSON JavaScript code w/ scope
+           / "(" 's32' <32-bit-exact-integer> ")" ; BSON 32-bit integer
+           / "(" 'u64' <64-bit-exact-integer> ")" ; BSON Timestamp (64-bit unsigned integer)
+           / "(" 's64' <64-bit-exact-integer> ")" ; BSON 64-bit integer
 
 array   ::= "#(" *e-value ")"          ; Vector of e-value
 binary  ::= "(" 'binary' subtype <bytevector> ")"

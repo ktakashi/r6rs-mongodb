@@ -462,3 +462,51 @@ And the second form uses the given MongoDB database object `database`.
 
 The `command` must be complied with the specification written in the
 official document [Database Commands](https://docs.mongodb.com/manual/reference/command/).
+
+## Conditions
+
+The library only exports predicate of the conditions. If you need to
+extend one of the conditions, then you need to refer the 
+[Developers' Reference](DevelopersReference.md)
+
+- `(bson-error? obj)`
+
+Return `#t` if the given `obj` is a condition of `&bson-error`
+
+`&bson-error` is the condition related to BSON read or write.
+
+
+- `(mongodb-error? obj)`
+
+Return `#t` if the given `obj` is a condition of `&mongodb`.
+
+`&mongodb` is the base condition of the MongoDB operation related
+condition.
+
+
+- `(mongodb-connection-error? obj)`
+
+Return `#t` if the given `obj` is a condition of `&mongodb-connection`.
+
+`&mongodb-connection` is the base condition of the MongoDB connection 
+operation related condition.
+
+
+- `(mongodb-connection-closed? obj)`
+
+Return `#t` if the given `obj` is a condition of `&mongodb-connection-closed`.
+
+`&mongodb-connection-closed` represents a connection is closed.
+
+- `(mongodb-invalid-cursor? obj)`
+
+Return `#t` if the given `obj` is a condition of `&mongodb-invalid-cursor`.
+
+`&mongodb-invalid-cursor` represents that specified cursor was invalid.
+
+
+- `(mongodb-query-failure? obj)`
+
+Return `#t` if the given `obj` is a condition of `&mongodb-query-failure`.
+
+`&mongodb-query-failure` represents that a query request failed.
