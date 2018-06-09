@@ -77,6 +77,23 @@ The following implementations are tested:
 - Larceny 1.3
 - Chez Scheme v9.5
 
+## For Chez Scheme
+
+Chez Scheme requires the shared object made of
+`src/mongodb/net/tcp/chez.c` file which provides simple socket
+interface for Chez Scheme. The file is written C however, it can only
+be compiled on POSIX environment (only tested on Ubuntu). The build
+command is the following:
+
+```shell
+$ gcc -fPIC -shared -O3 src/mongodb/net/tcp/chez.c \
+  -o src/mongodb/net/tcp/chez.so
+```
+
+The shared file name must also be the one specified above (even on OS X).
+
+If you have better solution, please send a PR.
+
 # Copyright and lincence
 
 Copyright 2018 Takashi Kato. Code released under the BSD-style license.
