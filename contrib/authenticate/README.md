@@ -16,3 +16,7 @@ If authentication failed, then it raises `&mongodb-authenticate` condition.
 
 Return `#t` if the given `obj` is a condition of `&mongodb-authenticate`,
 otherwise `#f`.
+
+- `(mongodb-database-logout! database)`
+
+Sends *logout* command to the given `database`.

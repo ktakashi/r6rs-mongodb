@@ -32,11 +32,13 @@
 #!read-macro=sagittarius/bv-string
 (library (mongodb authenticate)
     (export mongodb-database-authenticate!
+	    mongodb-database-logout!
 	    mongodb-authenticate-error?)
     (import (rnrs)
 	    (sagittarius)
 	    (mongodb database)
 	    (mongodb authenticate conditions)
+	    (mongodb authenticate logout)
 	    (sagittarius regex)
 	    (rfc hmac)
 	    (rfc base64)
@@ -123,7 +125,7 @@
 			  computed-signature)
       (mongodb-authenticate-error 'mongodb-database-authenticate!
 				  "Invalid signature"))
-    #t)
+    v)
   
   (let* ((initial (c0 username))
 	 (response (start (string-append "n,," initial))))
@@ -133,7 +135,7 @@
       (let ((response (continue conversation-id msg)))
 	(let-values (((done? conversation-id payload)
 		      (parse-response response)))
-	  (c2 (utf8->string payload) signature))))))
+	  (continue conversation-id (c2 (utf8->string payload) signature)))))))
 
 (define (authentication-hash username password)
   (bytevector->hex-string

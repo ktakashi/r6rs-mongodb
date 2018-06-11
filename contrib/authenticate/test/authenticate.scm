@@ -23,6 +23,8 @@
 	    (mongodb-database-authenticate! database "user" "invalid"))
 (test-assert (mongodb-database-authenticate! database "user" "password"))
 
+(test-assert (mongodb-database-logout! database))
+
 (mongodb-database-run-command database '(("dropUser" "user")))
 
 (test-end)

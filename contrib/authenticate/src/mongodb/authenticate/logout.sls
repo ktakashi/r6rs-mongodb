@@ -1,6 +1,6 @@
 ;;; -*- mode:scheme; coding:utf-8; -*-
 ;;;
-;;; mongodb/authenticate.sls - MongoDB authentication
+;;; mongodb/authenticate/logout.sls - MongoDB logout
 ;;;
 ;;;   Copyright (c) 2018  Takashi Kato  <ktakashi@ymail.com>
 ;;;
@@ -28,19 +28,13 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
+;; logout can be implemented commonly...
 #!r6rs
-(library (mongodb authenticate)
-    (export mongodb-database-authenticate!
-	    mongodb-database-logout!
-	    mongodb-authenticate-error?)
+(library (mongodb authenticate logout)
+    (export mongodb-database-logout!)
     (import (rnrs)
-	    (mongodb authenticate logout)
-	    (mongodb authenticate conditions))
+    	    (mongodb))
 
-(define (mongodb-database-authenticate! database username password)
-  (raise (condition
-	  (make-implementation-restriction-violation)
-	  (make-who-condition 'mongodb-database-authenticate)
-	  (make-message-condition "Not supported on this implementation"))))
-
+(define (mongodb-database-logout! database)
+  (mongodb-database-run-command database '(("logout" 1))))
 )
