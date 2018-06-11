@@ -50,7 +50,7 @@ for impl in ${implementations[@]}; do
     echo Testing with ${impl}
     for file in test/*.scm; do
 	scheme-env run ${impl} \
-		   --loadpath src $testpath \
+		   --loadpath src \
 		   --loadpath test/lib \
 		   --standard r6rs --program ${file} | check_output
 	case ${EXIT_STATUS} in
@@ -61,5 +61,29 @@ for impl in ${implementations[@]}; do
     echo
 done
 
-echo Exit status ${EXIT_STATUS}
-exit ${EXIT_STATUS}
+echo Library test status ${EXIT_STATUS}
+
+if [ ${EXIT_STATUS} != 0 ]; then
+    exit ${EXIT_STATUS}
+fi
+
+echo Testing contrib
+
+for file in contrib/**/test-info.sh; do
+    dir=$(dirname "${file}")
+    source ${file}
+    eval declare -a contrib_impls=${IMPLEMENTATIONS}
+    for impl in ${contrib_impls[@]}; do
+	echo Testing ${dir} on ${impl}
+	for file in ${dir}/${TEST_DIR}/*.scm; do
+ 	    scheme-env run ${impl} \
+ 		       --loadpath src \
+ 		       --loadpath test/lib \
+		       --loadpath ${dir}/${LIB_DIR} \
+ 		       --standard r6rs --program ${file} | check_output
+ 	    case ${EXIT_STATUS} in
+ 		0) EXIT_STATUS=$? ;;
+ 	    esac
+	done	
+    done
+done
