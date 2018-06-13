@@ -1,0 +1,10 @@
+Release Notes
+=============
+
+Version 18.06.13
+----------------
+
+Initial release of R6RS MongoDB binding
+
+- `(mongodb)` library is released.
+- Chez Scheme (on Linux), Larceny and Sagittarius Scheme are supported.

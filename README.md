@@ -94,6 +94,12 @@ The shared file name must also be the one specified above (even on OS X).
 
 If you have better solution, please send a PR.
 
+# Extension libraries
+
+There're implementation dependent extension libraries as well. These are
+located under the [`contrib`](contlib) directory.
+
+
 # Copyright and lincence
 
 Copyright 2018 Takashi Kato. Code released under the BSD-style license.
