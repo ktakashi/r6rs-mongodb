@@ -97,7 +97,7 @@ If you have better solution, please send a PR.
 # Extension libraries
 
 There're implementation dependent extension libraries as well. These are
-located under the [`contrib`](contlib) directory.
+located under the [`contrib`](contrib) directory.
 
 
 # Copyright and lincence
