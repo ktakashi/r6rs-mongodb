@@ -11,6 +11,7 @@
 				     "test")))
 (let ((db (make-mongodb-database (make-mongodb-connection "localhost")
 				 "test")))
+  (test-assert (mongodb-connection? (mongodb-database-connection db)))
   (test-error mongodb-connection-closed?
 	      (mongodb-database-run-command db '(("getLastError" 1)))))
 

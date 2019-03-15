@@ -35,6 +35,7 @@
 (library (mongodb database)
     (export mongodb-database? make-mongodb-database
 	    mongodb-database-name
+	    mongodb-database-connection
 	    mongodb-invalid-cursor? mongodb-query-failure?
 	    (rename (->full-collection-name mongodb-database->namespace))
 
