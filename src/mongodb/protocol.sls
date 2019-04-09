@@ -81,6 +81,11 @@
 	    op-reply-starting-from
 	    op-reply-number-returned
 	    op-reply-documents
+
+	    op-msg?
+	    op-msg-flag-bits
+	    op-msg-sections
+	    op-msg-checksum
 	    )
     (import (rnrs)
 	    (mongodb protocol msg-header)
@@ -90,7 +95,8 @@
 	    (mongodb protocol op-get-more)
 	    (mongodb protocol op-delete)
 	    (mongodb protocol op-kill-cursors)
-	    (mongodb protocol op-reply))
+	    (mongodb protocol op-reply)
+	    (mongodb protocol op-msg))
 
 (define (read-mongodb-message in)
   (let* ((header (read-msg-header in))
@@ -102,6 +108,7 @@
 	  ((= op-code *op-code:get-more*) (read-op-get-more in header))
 	  ((= op-code *op-code:delete*) (read-op-delete in header))
 	  ((= op-code *op-code:kill-cursors*) (read-op-kill-cursors in header))
+	  ((= op-code *op-code:msg*) (read-op-msg in header))
 	  (else
 	   (assertion-violation 'read-msg-header "Unknown OP code" op-code)))))
 
