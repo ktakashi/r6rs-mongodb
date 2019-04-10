@@ -32,8 +32,10 @@
 #!r6rs
 (library (mongodb util uuid)
     (export bytevector->uuid-string
-	    uuid-string->bytevector)
+	    uuid-string->bytevector
+	    make-v4-uuid)
     (import (rnrs)
+	    (mongodb util random)
 	    (mongodb util bytevectors))
 
 (define (bytevector->uuid-string bv)
@@ -48,14 +50,7 @@
 	(clock-var (bytevector-u8-ref bv 8))
 	(clock-low (bytevector-u8-ref bv 9))
 	(node (bytevector-u40-ref bv 10)))
-    ;; Some implementations return upper case of hex
-    (string-downcase
-     (string-append (pad0l (number->string low 16) 8) "-"
-		    (pad0l (number->string mid 16) 4) "-"
-		    (pad0l (number->string high 16) 4) "-"
-		    (pad0l (number->string clock-var 16) 2)
-		    (pad0l (number->string clock-low 16) 2) "-"
-		    (pad0l (number->string node 16) 12)))))
+    (make-uuid low mid high clock-var clock-low node)))
 
 ;; TODO implement efficiently...
 (define (uuid-string->bytevector s)
@@ -70,7 +65,27 @@
 	      (case c
 		((#\-) (loop))
 		(else (put-char out c) (loop)))))))))
-		
+
+(define (make-v4-uuid)
+  (define low (random-integer #xffffffff))
+  (define mid (random-integer #xffff))
+  (define high (bitwise-ior #x4000
+			    (bitwise-and #x0FFF (random-integer #xffff))))
+  (define clock-var (bitwise-ior #x80 (bitwise-and #x3F (random-integer #xff))))
+  (define clock-low (random-integer #xff))
+  (define node (random-integer #xffffffffffff))
+  (make-uuid low mid high clock-var clock-low node))
+
+(define (make-uuid low mid high clock-var clock-low node)
+  ;; Some implementations return upper case of hex
+  (string-downcase
+   (string-append (pad0l (number->string low 16) 8) "-"
+		  (pad0l (number->string mid 16) 4) "-"
+		  (pad0l (number->string high 16) 4) "-"
+		  (pad0l (number->string clock-var 16) 2)
+		  (pad0l (number->string clock-low 16) 2) "-"
+		  (pad0l (number->string node 16) 12))))
+
 (define (pad0l s n)
   (define len (string-length s))
   (if (< len n)

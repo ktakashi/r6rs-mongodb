@@ -62,6 +62,7 @@
 	    op-query-number-to-skip
 	    op-query-number-to-return
 	    op-query-query
+	    op-query-query-set!
 	    op-query-return-fields-selector
 
 	    op-get-more? make-op-get-more

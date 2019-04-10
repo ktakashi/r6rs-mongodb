@@ -33,7 +33,8 @@
 
 #!r6rs
 (library (mongodb database)
-    (export mongodb-database? make-mongodb-database
+    (export (rename (mongodb-base-database? mongodb-database?))
+	    make-mongodb-database
 	    mongodb-database-name
 	    mongodb-database-connection
 	    mongodb-invalid-cursor? mongodb-query-failure?
@@ -84,6 +85,7 @@
 	    mongodb-database-send-get-more ;; low level
 
 	    ;; for expansion
+	    (rename (mongodb-base-database <mongodb-base-database>))
 	    mongodb-database-default-message-sender
 	    )
     (import (rnrs)
