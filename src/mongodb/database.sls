@@ -82,6 +82,9 @@
 	    mongodb-database-receive-reply ;; low level
 	    mongodb-database-send-query	   ;; low level
 	    mongodb-database-send-get-more ;; low level
+
+	    ;; for expansion
+	    mongodb-database-default-message-sender
 	    )
     (import (rnrs)
 	    (mongodb connection)
@@ -90,13 +93,14 @@
 	    (mongodb bson)
 	    (mongodb util parameters))
 
-(define-record-type mongodb-database
+(define-record-type mongodb-base-database
   (fields connection
 	  name
+	  message-sender
 	  ;; frequently used
 	  use-iso-date?)
   (protocol (lambda (p)
-	      (lambda (connection name)
+	      (lambda (connection name message-sender)
 		(unless (mongodb-connection? connection)
 		  (assertion-violation 'make-mongodb-database
 				       "MongoDB connection is required"
@@ -107,9 +111,20 @@
 		  (assertion-violation 'make-mongodb-database
 				       "Database name must be a string"
 				       name))
-		(p connection name
+		(p connection name message-sender
 		   (mongodb-connection-option-use-iso-date?
 		    (mongodb-connection-option connection)))))))
+
+(define mongodb-database-name mongodb-base-database-name)
+(define mongodb-database-connection mongodb-base-database-connection)
+(define mongodb-database-use-iso-date? mongodb-base-database-use-iso-date?)
+
+(define-record-type mongodb-database
+  (parent mongodb-base-database)
+  (protocol (lambda (p)
+	      (lambda (connection name)
+		((p connection name
+		    mongodb-database-default-message-sender))))))
 
 (define-record-type mongodb-cursor
   (fields id				; cursor id
@@ -217,7 +232,7 @@
   (mongodb-database-query-request
    database collection-names skipn returnn query rfs))
 
-(define (send-message database msg)
+(define (mongodb-database-default-message-sender database msg)
   (define (get/generate-request-id database msg)
     (cond ((mongodb-protocol-message-request-id msg))
 	  (else
@@ -227,6 +242,10 @@
   (let ((request-id (get/generate-request-id database msg)))
     (write-mongodb-message (mongodb-database-output-port database) msg)
     request-id))
+
+(define (send-message database msg)
+  ((mongodb-base-database-message-sender database) database msg))
+
 (define (receive-reply database fcn)
   (parameterize ((*bson:use-iso-date?*
 		  (mongodb-database-use-iso-date? database)))
