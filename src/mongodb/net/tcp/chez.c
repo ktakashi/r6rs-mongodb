@@ -35,5 +35,5 @@ int make_client_socket(const char *host, const char *service)
 
 int socket_shutdown(int fd)
 {
-  shutdown(fd, SHUT_RDWR);
+  return shutdown(fd, SHUT_RDWR);
 }
