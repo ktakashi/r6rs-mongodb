@@ -35,7 +35,7 @@
 	    (math))
 
 (define random-integer
-  (let ((prng (pseudo-random RC4)))
+  (let ((prng (secure-random RC4)))
     (lambda (n)
       (random prng n))))    
 )

@@ -13,7 +13,7 @@ run_docker() {
     my_port=$2
     port_opt=""
     if [ x"$my_port" != x"" ]; then
-	port_opt="-p $port:27017"
+	port_opt="-p $my_port:27017"
     fi
     
     if [ -d /tmp/$name ]; then

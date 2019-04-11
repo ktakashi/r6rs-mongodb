@@ -2,17 +2,26 @@
 	(mongodb protocol)
 	(pp))
 
+(define (dump-msg-header header)
+  ;; nothing...
+  )
+
 (define (dump-op-msg msg)
   (display "OP_MSG #b")
-  (display (number->string (op-msg-flag-bits msg) 2)) (newline)
+  (display (number->string (op-msg-flag-bits msg) 2))
+  (display ", # of sections ")
+  (display (vector-length (op-msg-sections msg))) (newline)
+  (dump-msg-header (mongodb-protocol-message-header msg))
   (pp (op-msg-sections msg)))
 
 (define (dump-op-query msg)
   (display "OP_QUERY") (newline)
+  (dump-msg-header (mongodb-protocol-message-header msg))
   (pp (op-query-query msg)))
 
 (define (dump-op-reply msg)
   (display "OP_REPLY") (newline)
+  (dump-msg-header (mongodb-protocol-message-header msg))
   (pp (op-reply-documents msg)))
 
 (define (read&dump in)

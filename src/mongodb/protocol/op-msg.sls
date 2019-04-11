@@ -63,7 +63,7 @@
   (define in (open-bytevector-input-port (get-bytevector-n oin content-size)))
   (let loop ((r '()))
     (if (eof-object? (lookahead-u8 in))
-	(reverse r)
+	(list->vector (reverse r))
 	(let ((kind (get-u8 in)))
 	  (case kind
 	    ((0) (loop (cons (bson-read in) r)))
