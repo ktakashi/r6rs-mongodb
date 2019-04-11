@@ -122,8 +122,11 @@
 
 (define (mongodb-session-end! session)
   (define id (mongodb-session-id session))
-  (mongodb-connection-run-command (mongodb-session-connection session)
-				  `(("endSessions" #((("id" (uuid ,id))))))))
+  (if (mongodb-session-transaction-supported? session)
+      (mongodb-connection-run-command (mongodb-session-connection session)
+				      `(("endSessions" #((("id" (uuid ,id)))))))
+      ;; dummy
+      '(("ok" 1))))
 				    
 (define (mongodb-session-start-transaction! session)
   (define tx (mongodb-session-transaction-number session))
