@@ -94,11 +94,23 @@
 	    ;; cursor bookkeeping
 	    mongodb-database-cursor-get-more
 	    mongodb-database-kill-cursors
+
+	    ;; session
+	    mongodb-session-start
+	    mongodb-session?
+	    mongodb-session-id
+	    mongodb-session-transaction-supported?
+	    mongodb-session-end!
+	    mongodb-session-start-transaction!
+	    mongodb-session-commit-transaction!
+	    mongodb-session-abort-transaction!
+	    mongodb-session-database
 	    )
     (import (rnrs)
 	    (mongodb conditions)
 	    (mongodb connection)
 	    (mongodb database)
+	    (mongodb session)
 	    (mongodb bson))
 
 ;; SRFI-128/SRFI-158 style generator
