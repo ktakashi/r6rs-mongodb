@@ -23,14 +23,6 @@
 (define (ok? r)
   (cond ((assoc "ok" r) => (lambda (s) (> (cadr s) 0)))
 	(else #f)))
-(define (replica-set-master? conn)
-  (define (check-ok conn r)
-    (close-mongodb-connection! conn)
-    (ok? r))
-  (let ((conn (make-mongodb-connection "localhost" 27017 option)))
-    (open-mongodb-connection! conn)
-    (check-ok conn
-	      (mongodb-connection-run-command conn '(("replSetGetConfig" 1))))))
 
 (define conn (make-mongodb-connection "localhost" 27017 option))
 (define collection "transactionalCollection")
@@ -41,8 +33,7 @@
     (mongodb-database-drop-collection db collection)
     (mongodb-database-run-command db `(("create" ,collection)))))
 
-(when (and (get-environment-variable "MONGODB_RUNNING")
-	   (replica-set-master? conn))
+(when (get-environment-variable "MONGODB_RUNNING")
   (open-mongodb-connection! conn)
   ;; Commit
   (recreaate conn)
@@ -50,7 +41,7 @@
 	 (db (mongodb-session-database session "test")))
     (test-assert "Session database" (mongodb-database? db))
     (test-assert "Session id" (string? (mongodb-session-id session)))
-    (guard (e (else (test-assert "Unexpected error" #f)))
+    (guard (e (else (test-assert "Unexpected error" #f) ))
       (mongodb-session-start-transaction! session)
       (test-assert "Insert 1"
 		   (ok? (mongodb-database-insert-command db collection
@@ -60,11 +51,12 @@
 			 '#((("id" 2) ("foo" "bar"))))))
       (test-assert "Commit"
 		   (ok? (mongodb-session-commit-transaction! session)))
-      (test-assert "Session end" (ok? (mongodb-session-end! session)))))
-  (let* ((db (make-mongodb-database conn "test"))
-	 (r (mongodb-database-query db collection '())))
-    (test-equal "Inserted documents" 2
-		(vector-length (mongodb-query-result-documents r))))
+      (test-assert "Session end" (ok? (mongodb-session-end! session))))
+    (when (mongodb-session-transaction-supported? session)
+      (let* ((db (make-mongodb-database conn "test"))
+	     (r (mongodb-database-query db collection '())))
+	(test-equal "Inserted documents" 2
+		  (vector-length (mongodb-query-result-documents r))))))
 
   ;; Abort
   (recreaate conn)
@@ -82,11 +74,12 @@
 			 '#((("id" 2) ("foo" "bar"))))))
       (test-assert "Abort"
 		   (ok? (mongodb-session-abort-transaction! session)))
-      (test-assert "Session end" (ok? (mongodb-session-end! session)))))
-  (let* ((db (make-mongodb-database conn "test"))
-	 (r (mongodb-database-query db collection '())))
-    (test-equal "Inserted documents" '#()
-		(mongodb-query-result-documents r)))
+      (test-assert "Session end" (ok? (mongodb-session-end! session))))
+    (when (mongodb-session-transaction-supported? session)
+      (let* ((db (make-mongodb-database conn "test"))
+	     (r (mongodb-database-query db collection '())))
+	(test-equal "Inserted documents" '#()
+		    (mongodb-query-result-documents r)))))
   )
 
 

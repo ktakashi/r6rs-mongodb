@@ -36,12 +36,13 @@
     (export (rename (make-mongodb-session mongodb-session-start))
 	    mongodb-session?
 	    mongodb-session-id
+	    mongodb-session-transaction-supported?
 	    mongodb-session-end!
 	    mongodb-session-start-transaction!
 	    mongodb-session-commit-transaction!
 	    mongodb-session-abort-transaction!
 
-	    (rename (make-mongodb-session-database mongodb-session-database))
+	    (rename (->mongodb-session-database mongodb-session-database))
 	    )
     (import (rnrs)
 	    (rnrs mutable-pairs)
@@ -55,6 +56,7 @@
 	  (mutable transaction-number)
 	  (mutable transaction-started?)
 	  (mutable statement-ids)
+	  (mutable transaction-supported?)
 	  id)
   (protocol (lambda (p)
 	      (lambda (connection)
@@ -62,7 +64,27 @@
 		  (assertion-violation 'make-mongodb-session
 				       "MongoDB connection is required"
 				       connection))
-		(p connection #f #f '() (make-v4-uuid))))))
+
+		(p connection #f #f '() (check-transaction connection)
+		   (make-v4-uuid))))))
+
+(define (check-transaction conn)
+  (define (run-command command) (mongodb-connection-run-command conn command))
+  (define (check-version command)
+    (let ((r (run-command command)))
+      (cond ((assoc "version" r) =>
+	     (lambda (s)
+	       (let ((v (cadr s)))
+		 (>= (string->number (string (string-ref v 0))) 4))))
+	    (else #f))))
+  (define (check-command command)
+    (let ((r (run-command command)))
+      (cond ((assoc "ok" r) => (lambda (s) (> (cadr s) 0)))
+	    (else #f))))
+  (if (mongodb-connection-open? conn)
+      (and (check-version '(("buildinfo" 1)))
+	   (check-command '(("replSetGetConfig" 1))))
+      '()))
 
 (define-record-type mongodb-session-database
   (parent <mongodb-base-database>)
@@ -75,6 +97,22 @@
 		((p (mongodb-session-connection session) name 
 		    mongodb-session-message-sender)
 		 session)))))
+
+(define (->mongodb-session-database session name)
+  (let ((supported? (mongodb-session-transaction-supported? session)))
+    (cond ((eqv? supported? #t)
+	   (make-mongodb-session-database session name))
+	  ((null? supported?)
+	   (let ((conn (mongodb-session-connection session)))
+	     (unless (mongodb-connection-open? conn)
+	       (assertion-violation 'mongodb-session-database
+				    "Connection is closed"))
+	     (mongodb-session-transaction-supported?-set!
+	      session (check-transaction conn)))
+	   (->mongodb-session-database session name))
+	  (else
+	   (make-mongodb-database (mongodb-session-connection session)
+				  name)))))
 
 (define (mongodb-session-message-sender database msg)
   ;; TODO also OP_MSG?
@@ -127,13 +165,16 @@
   (unless tx
     (assertion-violation 'mongodb-session-commit-transaction! "No transaction"))
   (mongodb-session-transaction-number-set! session (and (> tx 0) (- tx 1)))
-  (mongodb-connection-run-command
-   (mongodb-session-connection session)
-   `((,command 1)
-     ("lsid" (("id" (uuid ,id))))
-     ("autocommit" #f)
-     ("txnNumber" (s64 ,tx))
-     ("stmtId" (s32 ,(update-ids! ids))))))
+  (if (mongodb-session-transaction-supported? session)
+      (mongodb-connection-run-command
+       (mongodb-session-connection session)
+       `((,command 1)
+	 ("lsid" (("id" (uuid ,id))))
+	 ("autocommit" #f)
+	 ("txnNumber" (s64 ,tx))
+	 ("stmtId" (s32 ,(update-ids! ids)))))
+      ;; not supported but just say yes...
+      '(("ok" 1))))
 
 (define (update-ids! ids)
   (let ((r (car ids)))
