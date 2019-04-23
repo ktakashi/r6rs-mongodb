@@ -49,10 +49,10 @@
   (begin
     (load-shared-object (find-file "mongodb/net/tcp/chez.so"))
     (case (machine-type)
-      ((a6le i3le ti3le) (load-shared-object "libc.so.6"))
+      ((ta6le a6le i3le ti3le arm32le ppc32le) (load-shared-object "libc.so.6"))
       ((i3osx ti3osx a6osx ta6osx) (load-shared-object "libc.dylib"))
+      ((ta6nt a6nt i3nt ti3nt) (load-shared-object "msvcrt.dll"))
       (else (load-shared-object "libc.so")))))
-
     
 (define close (foreign-procedure "close" (int) int))
 (define make-client-socket
